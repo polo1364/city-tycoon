@@ -475,22 +475,48 @@ button.danger { background: #dc3545; color: #fff; border-color: #dc3545; }
 @media (max-width: 768px) {
   .center-panel {
     width: 85%;
-    height: 85%;
+    height: 70%; /* 減少高度 */
+    padding: 12px; /* 減少內邊距 */
   }
   .top-section {
     grid-template-columns: 1fr;
   }
   .controls-section {
     grid-template-columns: repeat(2, 1fr);
+    gap: 6px; /* 減少間距 */
+  }
+  .section {
+    padding: 6px; /* 減少區塊內邊距 */
+  }
+  #log {
+    max-height: 120px; /* 限制戰況紀錄高度 */
   }
 }
 
 @media (max-width: 480px) {
   .center-panel {
     width: 92%;
-    height: 92%;
+    height: 75%; /* 減少高度 */
+    padding: 10px;
   }
   .tile .price { display: none; }
+  .panel-content {
+    gap: 4px; /* 進一步減少間距 */
+  }
+  #log {
+    max-height: 100px; /* 進一步限制戰況紀錄高度 */
+  }
+  .token {
+    width: 40px !important; /* 手機版棋子固定大小 */
+    height: 40px !important;
+    font-size: 16px !important;
+    border-width: 2px;
+    z-index: 50 !important; /* 確保棋子在最上層 */
+  }
+  .tile {
+    min-width: 60px; /* 確保格子有足夠大小 */
+    min-height: 60px;
+  }
 }
   
 .center-panel.minimized {
