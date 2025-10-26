@@ -30,16 +30,15 @@ button.danger { background:#ea3b3b; color:#fff; border-color:#d12b2b; }
 main { display: grid; grid-template-columns: 1fr 320px; gap: 12px; padding: 12px; }
 @media (max-width: 980px) { main { grid-template-columns: 1fr; } }
 
-/* --- 棋盤區：確保手機完整顯示 --- */
 .board-wrap { width: 100%; display: grid; }
 .board {
   background: #fff; border: 1px solid #e6e8ef; border-radius: 10px; padding: 6px;
   display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr);
   aspect-ratio: 1 / 1;
   width: 100%;
-  height: auto;           /* 配合 aspect-ratio 由寬決定高 */
-  min-height: 0;          /* 防止在小螢幕被 520px 卡住 */
-  max-width: 100vw;       /* 不突破視窗寬度 */
+  height: auto;
+  min-height: 0;
+  max-width: 100vw;
   position: relative; overflow: hidden;
 }
 @media (max-width: 480px) {
@@ -48,7 +47,6 @@ main { display: grid; grid-template-columns: 1fr 320px; gap: 12px; padding: 12px
   .die { width: 36px; height: 36px; font-size: 16px; }
 }
 
-/* 棋格 */
 .tile {
   border: 1px solid #e6e8ef; position: relative; padding: 4px; background: #fafbff;
   display: flex; flex-direction: column; justify-content: space-between;
@@ -79,7 +77,6 @@ main { display: grid; grid-template-columns: 1fr 320px; gap: 12px; padding: 12px
 .token[data-p="3"] { --tx: 48px; }
 .token[data-p="4"] { --tx: 64px; }
 
-/* 浮動戰況（置中顯示最新訊息） */
 .toast {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
   background: rgba(0,0,0,.75); color:#fff; padding: 10px 14px; border-radius: 10px;
@@ -131,6 +128,5 @@ main { display: grid; grid-template-columns: 1fr 320px; gap: 12px; padding: 12px
 
 footer { text-align: center; padding: 8px 12px; color:#666; font-size: 12px; }
 
-/* 診斷條 */
 #diag{position:fixed;left:0;right:0;bottom:0;padding:6px 10px;font-size:12px;background:#16a34a;color:#fff;display:flex;gap:8px;align-items:center;z-index:10}
 #diag.err{background:#b91c1c}

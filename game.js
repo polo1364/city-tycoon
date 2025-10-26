@@ -1,4 +1,4 @@
-// 城市資本戰 Web 版 v2（多檔案＋行動優化＋AI 強化）
+// 城市資本戰 Web 版 v2.1：修正 ensureCash、完善破產移交
 "use strict";
 (function(){
   var diagEl = document.getElementById('diag');
@@ -150,7 +150,7 @@
     }
     function updateOwners(){
       $$('.owner').forEach(function(el){ el.style.display='none'; });
-      for (var pi=0;pi<state.players.length;pi++){ var pl=state.players[pi]; for (var j=0;j<pl.properties.length;j++){ var idx=pl.properties[j]; var pos=idxToCoord(idx); var cell=document.querySelector('#board > .tile[style*="grid-row: '+(pos.r+1)+';"][style*="grid-column: '+(pos.c+1)+';"] .owner'); if (cell){ cell.style.display='block'; cell.style.background=pl.color; } } }
+      for (var pi=0;pi<state.players.length;pi++){ var pl=state.players[pi]; if (!pl.alive) continue; for (var j=0;j<pl.properties.length;j++){ var idx=pl.properties[j]; var pos=idxToCoord(idx); var cell=document.querySelector('#board > .tile[style*="grid-row: '+(pos.r+1)+';"][style*="grid-column: '+(pos.c+1)+';"] .owner'); if (cell){ cell.style.display='block'; cell.style.background=pl.color; } } }
     }
     function renderPlayers(){
       var panel=document.getElementById('playersPanel'); var html=""; for (var i=0;i<state.players.length;i++){ var p=state.players[i]; if (!p.alive) continue; html+='<div class="row"><div class="swatch" style="background:'+p.color+'"></div><div class="name">'+(i===state.cur?"⭐ ":"")+p.name+(p.inJail?"（獄）":"")+(p.outCard>0?"🃏":"")+'</div><div class="cash">$'+p.cash+'</div></div>'; } panel.innerHTML=html; document.getElementById('currentPlayer').textContent = state.players[state.cur].name;
@@ -232,7 +232,6 @@
       var pl=state.players[ownerIdx]; var cnt=0; for (var k=0;k<groupSlots.length;k++){ var idx=groupSlots[k]; if (pl.properties.indexOf(idx)>=0 && pl.mortgaged.indexOf(idx)<0) cnt++; } return {cnt:cnt,total:groupSlots.length};
     }
 
-    // ---- 地格處理 ----
     async function resolveTile(p, diceTotal){
       var t=tiles[p.pos];
       if (t.type==="PROPERTY") await onLandProperty(p,t);
@@ -246,16 +245,13 @@
       else if (t.type==="FREE") log(p.name+' 於休息區放鬆片刻。', !p.isAI);
     }
 
-    // --- AI 購買策略: 現金預留 200；若能湊成一色組則盡量買。 ---
     function aiShouldBuyProperty(p, t){
       var reserve = 200;
       var willHave = p.cash - t.price;
-      // 若買下即可全套（無抵押且全擁有） => 一律買
       var same = tiles.filter(function(x){ return x.type==="PROPERTY" && x.group===t.group; });
       var owned = same.filter(function(x){ return p.properties.indexOf(x.idx)>=0 && p.mortgaged.indexOf(x.idx)<0; }).length;
       var total = same.length;
-      if (owned+1 === total) return p.cash >= t.price; // 湊套必買（只要買得起）
-      // 一般情況：保留現金
+      if (owned+1 === total) return p.cash >= t.price;
       return willHave >= reserve;
     }
     function aiShouldBuyStation(p){ return p.cash >= 350 || [5,15,25,35].some(function(s){ return p.properties.indexOf(s)>=0; }); }
@@ -313,6 +309,38 @@
       if (p.cash<price){ log('資金不足，無法購買。', !p.isAI); return; }
       p.cash-=price; p.properties.push(idx); updateOwners(); renderPlayers(); log('📝 '+p.name+' 以 $'+price+' 購得《'+(t.name||t.label)+'》', !p.isAI);
     }
+
+    // ------- 關鍵修補：補上 ensureCash，含破產與資產移交 --------
+    async function ensureCash(p, need, creditor){
+      if (p.cash >= need) return;
+      // 先抵押未抵押資產（從低價到高價，盡量保留高價資產）
+      var candidates = p.properties.filter(function(idx){ return p.mortgaged.indexOf(idx)<0; })
+        .map(function(idx){ return {idx:idx, price:getPrice(tiles[idx])}; })
+        .sort(function(a,b){ return a.price - b.price; });
+      for (var i=0;i<candidates.length && p.cash<need;i++){
+        doMortgage(p, candidates[i].idx);
+        await sleep(60);
+      }
+      if (p.cash >= need) return;
+
+      // 全抵押仍不足 → 破產
+      // 若有債權人，移交資產；否則收歸銀行（清空所有持有）
+      if (creditor){
+        for (var j=0;j<p.properties.length;j++){
+          var idx = p.properties[j];
+          if (creditor.properties.indexOf(idx)<0) creditor.properties.push(idx);
+          if (p.mortgaged.indexOf(idx)>=0 && creditor.mortgaged.indexOf(idx)<0) creditor.mortgaged.push(idx);
+        }
+      }
+      // 清空並標記出局
+      p.properties = [];
+      p.mortgaged = [];
+      p.cash = 0;
+      p.alive = false;
+      log('💥 '+p.name+' 無力支付，宣告破產'+(creditor?('，資產移交給 '+creditor.name):'，資產收歸銀行')+'。', !p.isAI);
+      renderPlayers(); updateOwners(); renderTokens();
+    }
+
     async function payToBank(p, amount, reason){ if (amount<=0) return; log('🏦 '+p.name+' 支付銀行 $'+amount+'（'+reason+'）', !p.isAI); await ensureCash(p, amount); if (!p.alive) return; p.cash-=amount; renderPlayers(); }
     async function payToPlayer(payer,receiver,amount,reason){
       if (amount<=0) return; log('💸 '+payer.name+' 支付 $'+amount+' 給 '+receiver.name+'（'+reason+'）', !payer.isAI);
@@ -385,11 +413,9 @@
       var jTry=document.getElementById('jTry'); if (jTry) jTry.addEventListener('click', async function(){ document.getElementById('modal').classList.add('hidden'); var d=rollDice(), d1=d[0], d2=d[1], dbl=d1===d2; if (dbl){ p.inJail=false; p.jailTurns=0; log(p.name+' 擲出雙骰，出獄並移動 '+(d1+d2)+' 步。', !p.isAI); await moveSteps(p, d1+d2); await resolveTile(p, d1+d2); document.getElementById('btnEnd').disabled=false; } else { p.jailTurns++; log(p.name+' 未擲出雙骰（第 '+p.jailTurns+'/3 回合）。', !p.isAI); if (p.jailTurns>=3){ await payToBank(p, JAIL_FINE, '保釋金'); if (!p.alive){ document.getElementById('btnEnd').disabled=false; return; } p.inJail=false; p.jailTurns=0; await onRoll(); } else { document.getElementById('btnEnd').disabled=false; } } }, {once:true});
     }
 
-    // --- 強化 AI 流程：自動二擲、結束回合、富餘現金自動贖回 ---
     async function aiTurn(){
       var p=state.players[state.cur];
       await sleep(400);
-      // 在獄中：前兩回合嘗試擲骰，第三回合保釋
       if (p.inJail){
         if (p.jailTurns<2){
           var d=rollDice(), d1=d[0], d2=d[1], dbl=d1===d2;
@@ -409,7 +435,6 @@
         await aiUnmortgageIfRich(p);
         endTurn(); return;
       }
-      // 一般回合：擲骰（若雙骰自動再擲）
       var r = await onRoll();
       if (r && r.again){ await sleep(400); r = await onRoll(); if (r && r.again){ await sleep(400); await onRoll(); } }
       await aiUnmortgageIfRich(p);
@@ -417,7 +442,6 @@
     }
 
     async function aiUnmortgageIfRich(p){
-      // 若現金 > 500，按贖回成本由低到高贖回，直到保留 300
       var reserve = 300;
       var list = p.mortgaged.slice().sort(function(a,b){ return getPrice(tiles[a]) - getPrice(tiles[b]); });
       for (var i=0;i<list.length;i++){
@@ -426,7 +450,6 @@
       }
     }
 
-    // 事件綁定
     document.getElementById('btnRoll').addEventListener('click', onRoll);
     document.getElementById('btnEnd').addEventListener('click', endTurn);
     document.getElementById('btnBuy').addEventListener('click', function(){ if (!state.awaitingBuy) return; var p=state.players[state.cur]; var t=tiles[p.pos]; var price=(t.type==="PROPERTY")?t.price:(t.type==="STATION"?200:150); buyProperty(p, t.idx, price); state.awaitingBuy=false; document.getElementById('btnBuy').disabled=true; document.getElementById('btnSkip').disabled=true; document.getElementById('btnEnd').disabled=false; });
@@ -435,7 +458,6 @@
     document.getElementById('btnAssets').addEventListener('click', showAssets);
     document.getElementById('btnCloseAssets').addEventListener('click', function(){ document.getElementById('assetsPanel').classList.add('hidden'); });
 
-    // 存讀檔
     document.getElementById('btnSave').addEventListener('click', function(){
       try{
         var save = JSON.stringify(state);
@@ -464,7 +486,6 @@
       }catch(e){ diagERR("讀檔失敗："+(e&&e.message||e)); }
     });
 
-    // 初始化
     initPlayers();
     buildBoard();
     renderTokens();
