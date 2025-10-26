@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>城市資本戰｜Web 版（多檔案 v2.3）</title>
+  <title>城市資本戰｜Web 版（多檔案 v2.3.1）</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header>
-    <h1>城市資本戰 <span class="tag">Web 版（v2.3 房屋版）</span></h1>
+    <h1>城市資本戰 <span class="tag">Web 版（v2.3.1）</span></h1>
     <div class="controls">
       <button id="btnRoll" class="primary">🎲 擲骰</button>
       <button id="btnBuy" class="ok" disabled>買下地產</button>
@@ -38,13 +38,8 @@
         </div>
         <div id="turnInfo" class="turninfo"></div>
       </div>
-
       <div class="panel players" id="playersPanel"></div>
-
-      <div class="panel log">
-        <h2>戰況紀錄</h2>
-        <div id="log"></div>
-      </div>
+      <div class="panel log"><h2>戰況紀錄</h2><div id="log"></div></div>
     </aside>
   </main>
 
@@ -69,11 +64,38 @@
   </div>
 
   <footer>
-    <p>🏠 v2.3：新增 5 階段建屋（0~4+🏨），起薪與金額提升、行動版優化、棋子更明顯並逐格移動。</p>
+    <p>🧪 v2.3.1：加入「載入偵測與後備載入」，若 <code>game-v23.js</code> 遺失/被快取阻擋，會顯示紅色原因提示並自動嘗試 <code>?v=timestamp</code> 重載。</p>
   </footer>
 
-  <div id="diag" class="">🚀 正在載入 v2.3 腳本…</div>
+  <div id="diag" class="">🚀 正在載入 v2.3.1 腳本…</div>
 
-  <script src="game-v23.js" defer></script>
+  <!-- 主腳本；若遺失，onerror 會標紅提示 -->
+  <script src="game-v23.js" defer onerror="(function(){var d=document.getElementById('diag');d.className='err';d.textContent='🚨 無法載入 game-v23.js（檔案不在同目錄或檔名大小寫不符）。已嘗試備援載入…';})();"></script>
+
+  <!-- 後備載入器：檢測 1.2s 內仍未就緒則改用 ?v=timestamp -->
+  <script>
+  (function(){
+    var diag=document.getElementById('diag');
+    function ok(msg){ diag.className=''; diag.textContent='✅ '+msg; }
+    function fail(msg){ diag.className='err'; diag.textContent='🚨 '+msg; }
+
+    var tried=false;
+    function ensure(){
+      if (window.__TYCOON_V23_READY__) { ok('v2.3 腳本就緒。'); return; }
+      if (!tried){
+        tried=true;
+        var s=document.createElement('script');
+        s.src='game-v23.js?v='+(Date.now());
+        s.defer=true;
+        s.onerror=function(){ fail('備援載入也失敗。請確認已上傳 game-v23.js 到與 index.html 相同資料夾，且檔名大小寫完全一致。'); };
+        document.body.appendChild(s);
+        setTimeout(ensure, 1500);
+      }else{
+        fail('腳本未載入（可能是路徑或快取問題）。請清除瀏覽器快取，或檢查檔案路徑/大小寫。');
+      }
+    }
+    setTimeout(ensure, 1200);
+  })();
+  </script>
 </body>
 </html>

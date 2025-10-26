@@ -10,7 +10,7 @@
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 
-  function boot(){ try{ main(); diagOK("v2.3 初始化完成。"); }catch(err){ diagERR("初始化失敗："+(err&&err.message||err)); console.error(err); } }
+  function boot(){ try{ window.__TYCOON_V23_READY__=true; main(); diagOK("v2.3 初始化完成。"); }catch(err){ diagERR("初始化失敗："+(err&&err.message||err)); console.error(err); } }
 
   function main(){
     var $ = function(s){ return document.querySelector(s); };
