@@ -121,6 +121,17 @@ body {
 .token[data-p="2"] { --tx: clamp(-8px, -1vw, -12px); --ty: clamp(8px, 1vw, 12px); }
 .token[data-p="3"] { --tx: clamp(8px, 1vw, 12px); --ty: clamp(-8px, -1vw, -12px); }
 
+.token.moving {
+  transform: translate(calc(-50% + var(--tx, 0)), calc(-50% + var(--ty, 0))) scale(2.5);
+  z-index: 30;
+  filter: drop-shadow(0 0 30px currentColor) drop-shadow(0 0 60px currentColor);
+  animation: pulse 0.4s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { transform: translate(calc(-50% + var(--tx, 0)), calc(-50% + var(--ty, 0))) scale(2.5); }
+  50% { transform: translate(calc(-50% + var(--tx, 0)), calc(-50% + var(--ty, 0))) scale(2.8); }
+}
+
 @keyframes tokenGlow {
   0%, 100% { 
     transform: translate(calc(-50% + var(--tx, 0)), calc(-50% + var(--ty, 0))) scale(1); 
@@ -144,15 +155,20 @@ body {
   width: 63.6%;
   height: 63.6%;
   background: rgba(255, 255, 255, 0.96);
-  border: 2px solid #333;
-  border-radius: 10px;
-  padding: clamp(8px, 1vw, 14px);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
-  gap: clamp(6px, 0.8vw, 10px);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  padding: 20px;
   z-index: 100;
-  overflow: hidden;
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.center-panel.minimized {
+  width: 25%;
+  height: 25%;
+  opacity: 0.2;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.8);
 }
 
 .center-panel.collapsed {
@@ -654,16 +670,41 @@ window.__TYCOON_V23_READY__=true;
     
     // 棋子移動動畫
     function animateTokenMove(playerIdx, steps, callback) {
-      if (steps <= 0) {
-        if (callback) callback();
-        return;
+      // 縮小面板
+      var panel = document.querySelector('.center-panel');
+      if (panel && !panel.classList.contains('collapsed')) {
+        panel.classList.add('minimized');
       }
-      var p = state.players[playerIdx];
-      p.pos = (p.pos + 1) % 40;
-      renderTokens();
-      setTimeout(function() {
-        animateTokenMove(playerIdx, steps - 1, callback);
-      }, 250);
+      
+      function moveStep(remainingSteps) {
+        if (remainingSteps <= 0) {
+          // 恢復面板
+          setTimeout(function() {
+            if (panel) panel.classList.remove('minimized');
+            // 移除所有棋子的 moving class
+            $$('.token').forEach(function(tok){ tok.classList.remove('moving'); });
+          }, 300);
+          if (callback) callback();
+          return;
+        }
+        
+        var p = state.players[playerIdx];
+        p.pos = (p.pos + 1) % 40;
+        renderTokens();
+        
+        // 添加移動效果到當前棋子
+        $$('.token').forEach(function(tok){ tok.classList.remove('moving'); });
+        var currentToken = document.querySelector('.token[data-p="' + playerIdx + '"]');
+        if (currentToken) {
+          currentToken.classList.add('moving');
+        }
+        
+        setTimeout(function() {
+          moveStep(remainingSteps - 1);
+        }, 400);
+      }
+      
+      moveStep(steps);
     }
     function updateOwners(){
       $$('.owner').forEach(function(el){ el.style.display='none'; });
