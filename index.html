@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>城市資本戰｜Web 版（多檔案 v2.3.1）</title>
-  <link rel="stylesheet" href="./css/style.css?v=233" />
+  <title>城市資本戰｜v2.3.4（外部腳本，無內嵌）</title>
+  <link rel="stylesheet" href="./css/style.css?v=234" />
 </head>
 <body>
   <header>
-    <h1>城市資本戰 <span class="tag">Web 版（v2.3.1）</span></h1>
+    <h1>城市資本戰 <span class="tag">v2.3.4（無內嵌腳本）</span></h1>
     <div class="controls">
       <button id="btnRoll" class="primary">🎲 擲骰</button>
       <button id="btnBuy" class="ok" disabled>買下地產</button>
@@ -43,77 +43,11 @@
     </aside>
   </main>
 
-  <div id="modal" class="modal hidden">
-    <div class="modal-content">
-      <div id="modalBody"></div>
-      <div class="modal-actions">
-        <button id="modalOk" class="ok">確定</button>
-        <button id="modalCancel">取消</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="assetsPanel" class="drawer hidden">
-    <div class="drawer-content">
-      <div class="drawer-header">
-        <h3>資產與建屋</h3>
-        <button id="btnCloseAssets">✕</button>
-      </div>
-      <div id="assetsBody"></div>
-    </div>
-  </div>
-
   <footer>
-    <p>🧪 v2.3.1：加入「載入偵測與後備載入」，若 <code>game-v23.js</code> 遺失/被快取阻擋，會顯示紅色原因提示並自動嘗試 <code>?v=timestamp</code> 重載。</p>
+    <p>🔒 移除所有內嵌 script 以相容嚴格 CSP；啟動程式在 <code>./js/boot.js</code>。</p>
   </footer>
 
-  <div id="diag" class="">🚀 正在載入 v2.3.1 腳本…</div>
-
-  <!-- 主腳本；若遺失，onerror 會標紅提示 -->
-  
-
-  <!-- 後備載入器：檢測 1.2s 內仍未就緒則改用 ?v=timestamp -->
-  <script>
-  (function(){
-    var diag=document.getElementById('diag');
-    function ok(msg){ diag.className=''; diag.textContent='✅ '+msg; }
-    function fail(msg){ diag.className='err'; diag.textContent='🚨 '+msg; }
-
-    var tried=false;
-    function ensure(){
-      if (window.__TYCOON_V23_READY__) { ok('v2.3 腳本就緒。'); return; }
-      if (!tried){
-        tried=true;
-        var s=document.createElement('script');
-        s.src='game-v23.js?v='+(Date.now());
-        s.defer=true;
-        s.onerror=function(){ fail('備援載入也失敗。請確認已上傳 game-v23.js 到與 index.html 相同資料夾，且檔名大小寫完全一致。'); };
-        document.body.appendChild(s);
-        setTimeout(ensure, 1500);
-      }else{
-        fail('腳本未載入（可能是路徑或快取問題）。請清除瀏覽器快取，或檢查檔案路徑/大小寫。');
-      }
-    }
-    setTimeout(ensure, 1200);
-  })();
-  </script>
-
-  <div id="diag" style="position:fixed;left:0;right:0;bottom:0;padding:6px 10px;font-size:12px;background:#16a34a;color:#fff;z-index:10">🚀 準備載入腳本…</div>
-  <script>
-  (function(){
-    var diag=document.getElementById('diag');
-    function ok(m){ diag.style.background='#16a34a'; diag.textContent='✅ '+m; }
-    function err(m){ diag.style.background='#b91c1c'; diag.textContent='🚨 '+m; }
-    setTimeout(function(){
-      if (!window.__TYCOON_V23_READY__) {
-        err('未載入 ./js/game-v23.js。請確認「/js/game-v23.js」檔案存在，且大小寫一致。');
-      } else {
-        ok('腳本載入成功');
-      }
-    }, 1000);
-  })();
-  </script>
-  <script src="./js/game-v23.js?v=233" defer onerror="(function(){var d=document.getElementById('diag');d.style.background='#b91c1c';d.textContent='🚨 無法載入 ./js/game-v23.js（檔案缺失或大小寫不符）。';})();"></script>
-
+  <div id="diag" class="">🚀 準備載入腳本…</div>
+  <script src="./js/boot.js?v=234" defer></script>
 </body>
 </html>
