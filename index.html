@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>城市資本戰｜Web 版（多檔案 v2.3.1）</title>
-  <link rel="stylesheet" href="style.css?v=232" />
+  <link rel="stylesheet" href="./css/style.css?v=233" />
 </head>
 <body>
   <header>
@@ -70,7 +70,7 @@
   <div id="diag" class="">🚀 正在載入 v2.3.1 腳本…</div>
 
   <!-- 主腳本；若遺失，onerror 會標紅提示 -->
-  <script src="game-v23.js" defer onerror="(function(){var d=document.getElementById('diag');d.className='err';d.textContent='🚨 無法載入 game-v23.js（檔案不在同目錄或檔名大小寫不符）。已嘗試備援載入…';})();"></script>
+  
 
   <!-- 後備載入器：檢測 1.2s 內仍未就緒則改用 ?v=timestamp -->
   <script>
@@ -97,5 +97,23 @@
     setTimeout(ensure, 1200);
   })();
   </script>
+
+  <div id="diag" style="position:fixed;left:0;right:0;bottom:0;padding:6px 10px;font-size:12px;background:#16a34a;color:#fff;z-index:10">🚀 準備載入腳本…</div>
+  <script>
+  (function(){
+    var diag=document.getElementById('diag');
+    function ok(m){ diag.style.background='#16a34a'; diag.textContent='✅ '+m; }
+    function err(m){ diag.style.background='#b91c1c'; diag.textContent='🚨 '+m; }
+    setTimeout(function(){
+      if (!window.__TYCOON_V23_READY__) {
+        err('未載入 ./js/game-v23.js。請確認「/js/game-v23.js」檔案存在，且大小寫一致。');
+      } else {
+        ok('腳本載入成功');
+      }
+    }, 1000);
+  })();
+  </script>
+  <script src="./js/game-v23.js?v=233" defer onerror="(function(){var d=document.getElementById('diag');d.style.background='#b91c1c';d.textContent='🚨 無法載入 ./js/game-v23.js（檔案缺失或大小寫不符）。';})();"></script>
+
 </body>
 </html>
