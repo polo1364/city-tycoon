@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>城市資本戰｜Web 版（多檔案 v2.2）</title>
+  <title>城市資本戰｜Web 版（多檔案 v2.3）</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header>
-    <h1>城市資本戰 <span class="tag">Web 版（多檔案 v2.2）</span></h1>
+    <h1>城市資本戰 <span class="tag">Web 版（v2.3 房屋版）</span></h1>
     <div class="controls">
       <button id="btnRoll" class="primary">🎲 擲骰</button>
       <button id="btnBuy" class="ok" disabled>買下地產</button>
       <button id="btnSkip" disabled>略過/取消</button>
       <button id="btnEnd" disabled>結束回合</button>
-      <button id="btnAssets">資產</button>
+      <button id="btnAssets">資產 / 建屋</button>
       <button id="btnSave">存檔</button>
       <button id="btnLoad">讀檔</button>
       <button id="btnReset" class="danger">重新開始</button>
@@ -61,7 +61,7 @@
   <div id="assetsPanel" class="drawer hidden">
     <div class="drawer-content">
       <div class="drawer-header">
-        <h3>資產管理</h3>
+        <h3>資產與建屋</h3>
         <button id="btnCloseAssets">✕</button>
       </div>
       <div id="assetsBody"></div>
@@ -69,12 +69,11 @@
   </div>
 
   <footer>
-    <p>❗ v2.2：改用 <code>game-v22.js</code> 以避免 CDN/瀏覽器快取；加入 <code>safeEnsureCash()</code> 包裝，徹底根除「找不到 ensureCash」錯誤。</p>
+    <p>🏠 v2.3：新增 5 階段建屋（0~4+🏨），起薪與金額提升、行動版優化、棋子更明顯並逐格移動。</p>
   </footer>
 
-  <div id="diag" class="">🚀 準備載入腳本…</div>
+  <div id="diag" class="">🚀 正在載入 v2.3 腳本…</div>
 
-  <!-- 重要：更名 JS 檔避免快取殘留 -->
-  <script src="game-v22.js" defer></script>
+  <script src="game-v23.js" defer></script>
 </body>
 </html>
