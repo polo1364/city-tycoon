@@ -132,7 +132,9 @@
 
   function makePlayer(name, isAI, color) {
     return {
-      id: crypto.randomUUID ? crypto.randomUUID() : String(Math.random()),
+      id: (typeof globalThis!=='undefined' && globalThis.crypto && typeof globalThis.crypto.randomUUID==='function')
+        ? globalThis.crypto.randomUUID()
+        : 'p-' + Math.random().toString(36).slice(2),
       name, isAI, color,
       cash: 1500,
       pos: 0,
