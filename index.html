@@ -99,12 +99,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(12px, 1.5vw, 16px);
+  font-size: clamp(14px, 1.5vw, 18px);
   font-weight: 700;
   color: white;
   text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-  width: clamp(32px, 3.5vw, 44px);
-  height: clamp(32px, 3.5vw, 44px);
+  width: clamp(40px, 3.5vw, 50px); /* 提高最小寬度 */
+  height: clamp(40px, 3.5vw, 50px); /* 提高最小高度 */
   border-radius: 50%;
   border: 3px solid #fff;
   box-shadow: 0 6px 16px rgba(0,0,0,0.8), 0 0 20px rgba(255,255,255,0.4), 0 0 0 3px rgba(0,0,0,0.3);
@@ -572,12 +572,15 @@ button.danger { background: #dc3545; color: #fff; border-color: #dc3545; }
     font-size: 11px;
   }
   .token {
-    width: 50px !important;
-    height: 50px !important;
-    font-size: 20px !important;
-    border-width: 3px !important;
-    z-index: 150 !important;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.9), 0 0 30px rgba(255,255,255,0.8) !important;
+    width: 55px !important;
+    height: 55px !important;
+    font-size: 22px !important;
+    border-width: 4px !important;
+    z-index: 200 !important; /* 更高的 z-index */
+    box-shadow: 0 10px 25px rgba(0,0,0,1), 0 0 40px rgba(255,255,255,1), 0 0 10px currentColor !important;
+    opacity: 1 !important; /* 確保不透明 */
+    visibility: visible !important; /* 確保可見 */
+    display: grid !important; /* 確保顯示 */
   }
   .tile {
     min-width: 55px;
