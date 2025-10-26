@@ -593,6 +593,30 @@ button.danger { background: #dc3545; color: #fff; border-color: #dc3545; }
     margin-bottom: 0 !important; /* 移除下邊距，讓棋盤可以完整顯示 */
   }
 }
+
+/* 手機橫式優化 */
+@media (max-width: 900px) and (orientation: landscape) {
+  .center-panel {
+    height: 50vh !important; /* 橫式時面板佔據50% */
+    max-height: 400px !important;
+  }
+  .panel-content {
+    max-height: calc(50vh - 60px) !important;
+  }
+  #boardContainer {
+    max-height: 50vh !important; /* 棋盤也限制高度 */
+  }
+}
+
+/* 手機直式優化 */
+@media (max-width: 480px) and (orientation: portrait) {
+  #boardContainer {
+    max-height: 60vh !important; /* 直式時棋盤佔據60% */
+  }
+  .token-container {
+    z-index: 300 !important; /* 確保棋子容器在最上層 */
+  }
+}
   
 .center-panel.minimized {
   width: 25%;
@@ -1856,7 +1880,7 @@ var MAPS = {
         // 創建棋子容器
         var container = document.createElement('div');
         container.className = 'token-container';
-        container.style.cssText = 'position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 2px; flex-wrap: wrap; padding: 2px; z-index: 10; pointer-events: none;';
+        container.style.cssText = 'position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 2px; flex-wrap: wrap; padding: 2px; z-index: 250 !important; pointer-events: none;';
         
         tokens.forEach(function(t){
           var tok = document.createElement('div'); 
