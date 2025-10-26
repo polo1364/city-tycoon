@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>城市資本戰｜Web 版</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>城市資本戰 <span class="tag">Web 版 MVP</span></h1>
+    <div class="controls">
+      <button id="btnRoll" class="primary">🎲 擲骰</button>
+      <button id="btnBuy" class="ok" disabled>買下地產</button>
+      <button id="btnSkip" disabled>略過/取消</button>
+      <button id="btnEnd" disabled>結束回合</button>
+      <button id="btnAssets">資產</button>
+      <button id="btnSave">存檔</button>
+      <button id="btnLoad">讀檔</button>
+      <button id="btnReset" class="danger">重新開始</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="board" id="board"></section>
+
+    <aside class="sidebar">
+      <div class="panel status">
+        <h2>當前玩家</h2>
+        <div id="currentPlayer"></div>
+        <div class="dice">
+          <div id="dice1" class="die">-</div>
+          <div id="dice2" class="die">-</div>
+        </div>
+        <div id="turnInfo" class="turninfo"></div>
+      </div>
+
+      <div class="panel players" id="playersPanel"></div>
+
+      <div class="panel log">
+        <h2>戰況紀錄</h2>
+        <div id="log"></div>
+      </div>
+    </aside>
+  </main>
+
+  <div id="modal" class="modal hidden">
+    <div class="modal-content">
+      <div id="modalBody"></div>
+      <div class="modal-actions">
+        <button id="modalOk" class="ok">確定</button>
+        <button id="modalCancel">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="assetsPanel" class="drawer hidden">
+    <div class="drawer-content">
+      <div class="drawer-header">
+        <h3>資產管理</h3>
+        <button id="btnCloseAssets">✕</button>
+      </div>
+      <div id="assetsBody"></div>
+    </div>
+  </div>
+
+  <footer>
+    <p>❗ 這是可玩的最小版本（MVP）：支援購地/收租/入獄/機會命運/車站/事業/抵押與贖回。尚未實作蓋房/旅館與玩家間交易（將在下一版加入）。</p>
+  </footer>
+
+  <script src="game.js"></script>
+</body>
+</html>
