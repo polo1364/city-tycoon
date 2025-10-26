@@ -755,5 +755,35 @@ window.__TYCOON_V23_READY__=true;
   }
 })();
   </script>
+
+<!-- v2.3.6 強制啟動保險器 -->
+<script>
+(function(){
+  function ready(fn){
+    if (document.readyState !== 'loading') fn();
+    else document.addEventListener('DOMContentLoaded', fn);
+  }
+  function showErr(msg){
+    var bar = document.getElementById('diag') || (function(){
+      var d=document.createElement('div'); d.id='diag'; document.body.appendChild(d); return d;
+    })();
+    bar.style.cssText='position:fixed;left:0;right:0;bottom:0;padding:6px 10px;font-size:12px;background:#b91c1c;color:#fff;z-index:10';
+    bar.textContent='🚨 '+msg;
+    console.error(msg);
+  }
+  ready(function(){
+    try{
+      if (typeof boot === 'function') {
+        boot();
+      } else {
+        showErr('找不到 boot()，請檢查 Console 第一個紅字錯誤。');
+      }
+    }catch(err){
+      showErr('啟動失敗：' + (err && err.message || err));
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
