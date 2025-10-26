@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>城市資本戰｜Web 版</title>
+  <title>城市資本戰｜Web 版（多檔案＋診斷）</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header>
-    <h1>城市資本戰 <span class="tag">Web 版 MVP</span></h1>
+    <h1>城市資本戰 <span class="tag">Web 版（多檔案）</span></h1>
     <div class="controls">
       <button id="btnRoll" class="primary">🎲 擲骰</button>
       <button id="btnBuy" class="ok" disabled>買下地產</button>
@@ -65,9 +65,13 @@
   </div>
 
   <footer>
-    <p>❗ 這是可玩的最小版本（MVP）：支援購地/收租/入獄/機會命運/車站/事業/抵押與贖回。尚未實作蓋房/旅館與玩家間交易（將在下一版加入）。</p>
+    <p>❗ 這是可玩的最小版本（MVP）：支援購地/收租/入獄/機會命運/車站/事業/抵押與贖回。尚未實作蓋房/旅館與玩家間交易。</p>
   </footer>
 
-  <script src="game.js"></script>
+  <!-- 診斷列：初始化與錯誤都會顯示在這 -->
+  <div id="diag" class="err">🚨 準備載入腳本…</div>
+
+  <!-- 將腳本放在頁面底部，避免 DOM 未就緒 -->
+  <script src="game.js" defer></script>
 </body>
 </html>
