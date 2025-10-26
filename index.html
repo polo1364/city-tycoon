@@ -2,195 +2,498 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>城市資本戰｜單檔版 v2.3.5</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>大富翁 - 全螢幕優化版</title>
   <style>
-* { box-sizing: border-box; }
-html, body { height: 100%; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; width: 100%; overflow: hidden; }
 body {
-  margin: 0;
-  font-family: "Noto Sans TC", "Microsoft JhengHei", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  color: #222;
-  background: #f6f7fb;
+  font-family: "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-header {
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
-  padding: 12px 16px; background: #fff; border-bottom: 1px solid #e6e8ef;
-  position: sticky; top: 0; z-index: 5;
-}
-h1 { font-size: 20px; margin: 0; display: flex; align-items: center; gap: 8px; }
-.tag { font-size: 12px; color:#555; background:#eef1ff; padding:2px 6px; border-radius:6px; border:1px solid #cdd6ff; }
-.controls { display: flex; gap: 8px; flex-wrap: wrap; }
-
-button {
-  border: 1px solid #cfd5e5; background: #fff; color: #222;
-  padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: transform .05s ease, background .2s;
-}
-button:disabled { opacity: .5; cursor: not-allowed; }
-button:hover:not(:disabled) { background: #f2f4ff; }
-button:active:not(:disabled) { transform: translateY(1px); }
-button.primary { background:#2b6ef3; color:#fff; border-color:#2b6ef3; }
-button.ok { background:#11a36a; color:#fff; border-color:#0f8f5d; }
-button.danger { background:#ea3b3b; color:#fff; border-color:#d12b2b; }
-
-main { display: grid; grid-template-columns: 1fr 340px; gap: 12px; padding: 12px; }
-@media (max-width: 980px) {
-  main { grid-template-columns: 1fr; }
-  .sidebar { order: 2; }
-  .board-wrap { order: 1; }
+#game-container {
+  width: min(98vh, 98vw);
+  height: min(98vh, 98vw);
+  position: relative;
 }
 
-.board-wrap { width: 100%; display: grid; }
 .board {
-  background: #fff; border: 1px solid #e6e8ef; border-radius: 10px; padding: 6px;
-  display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr);
-  aspect-ratio: 1 / 1;
   width: 100%;
-  height: auto;
-  min-height: 0;
-  max-width: 100vw;
-  position: relative; overflow: hidden;
-}
-@media (max-width: 520px) {
-  /* 行動版更易讀：隱藏價錢列，放大棋子與骰子 */
-  .tile .price { display: none; }
-  .tile .label { font-size: 11px; }
-  .die { width: 40px; height: 40px; font-size: 18px; }
+  height: 100%;
+  background: #fff;
+  border: 3px solid #333;
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: repeat(11, 1fr);
+  grid-template-rows: repeat(11, 1fr);
+  position: relative;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.4);
 }
 
 .tile {
-  border: 1px solid #e6e8ef; position: relative; padding: 4px; background: #fafbff;
-  display: flex; flex-direction: column; justify-content: space-between;
+  border: 1px solid #ccc;
+  position: relative;
+  padding: 2px;
+  background: #fafbff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-size: clamp(7px, 0.8vw, 10px);
+  overflow: hidden;
 }
-.tile.corner { background: #f1f3f9; }
-.tile .label { font-size: 12px; font-weight: 700; line-height: 1.2; }
-.tile .price { font-size: 10px; color:#555; }
-.tile .badge { position: absolute; top: 0; left: 0; padding:2px 4px; font-size: 10px; background:#333; color:#fff; border-bottom-right-radius:6px; }
-.tile .owner { position: absolute; right: 2px; bottom: 2px; width: 12px; height: 12px; border-radius: 50%; border: 1px solid rgba(0,0,0,.2); }
+.tile.corner { background: #f1f3f9; font-weight: 700; }
+.tile .label { font-size: clamp(7px, 0.8vw, 11px); font-weight: 600; line-height: 1.1; word-break: break-all; }
+.tile .price { font-size: clamp(6px, 0.6vw, 9px); color: #666; }
+.tile .badge { position: absolute; top: 0; left: 0; padding: 1px 2px; font-size: clamp(6px, 0.6vw, 8px); background: #333; color: #fff; border-bottom-right-radius: 3px; }
+.tile .owner { 
+  position: absolute; 
+  right: 4px; 
+  bottom: 4px; 
+  width: clamp(18px, 2vw, 26px); 
+  height: clamp(18px, 2vw, 26px); 
+  border-radius: 50%; 
+  border: 3px solid #fff; 
+  box-shadow: 0 3px 10px rgba(0,0,0,0.8), inset 0 2px 4px rgba(255,255,255,0.4), 0 0 0 1px rgba(0,0,0,0.3); 
+  z-index: 12; 
+}
+.tile .level-badge { 
+  position: absolute; 
+  left: 4px; 
+  top: 4px; 
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
+  color: #fff; 
+  font-size: clamp(10px, 1.1vw, 15px); 
+  font-weight: 900; 
+  padding: 3px 6px; 
+  border-radius: 5px; 
+  line-height: 1; 
+  z-index: 12;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.5), 0 0 0 2px rgba(255,255,255,0.4);
+  border: 2px solid rgba(255,255,255,0.6);
+  letter-spacing: 0.5px;
+}
+.tile .level-badge.hotel { 
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); 
+}
+.tile.property .colorbar { height: clamp(3px, 0.4vw, 6px); border-radius: 2px; margin-bottom: 1px; }
+.tile.station::after, .tile.utility::after, .tile.tax::after, .tile.chance::after, 
+.tile.chest::after, .tile.gotojail::after, .tile.jail::after, .tile.start::after, .tile.free::after {
+  position: absolute; right: 1px; top: 1px; font-size: clamp(10px, 1.2vw, 14px);
+}
+.tile.station::after { content: "🚉"; }
+.tile.utility::after { content: "⚙️"; }
+.tile.tax::after { content: "💰"; }
+.tile.chance::after { content: "🎲"; }
+.tile.chest::after { content: "🂠"; }
+.tile.gotojail::after { content: "🚔"; }
+.tile.jail::after { content: "🧱"; }
+.tile.start::after { content: "🏁"; }
+.tile.free::after { content: "🅿️"; }
 
-.tile.property .colorbar { height: 6px; border-radius: 6px; margin-bottom: 2px; }
-.tile.station::after { content: "🚉"; position:absolute; right:2px; top:2px; }
-.tile.utility::after { content: "⚙️"; position:absolute; right:2px; top:2px; }
-.tile.tax::after { content: "💰"; position:absolute; right:2px; top:2px; }
-.tile.chance::after { content: "🎲"; position:absolute; right:2px; top:2px; }
-.tile.chest::after { content: "🂠"; position:absolute; right:2px; top:2px; }
-.tile.gotojail::after { content: "🚔"; position:absolute; right:2px; top:2px; }
-.tile.jail::after { content: "🧱"; position:absolute; right:2px; top:2px; }
-.tile.start::after { content: "🏁"; position:absolute; right:2px; top:2px; }
-.tile.free::after { content: "🅿️"; position:absolute; right:2px; top:2px; }
-
-/* 棋子：更大、有棋子符號，逐格移動 */
 .token {
-  width: 18px; height: 18px; border-radius: 50%; border:2px solid #fff;
-  box-shadow: 0 0 0 1px rgba(0,0,0,.25); position: absolute; bottom: 6px; left: 6px;
-  transform: translate(var(--tx,0), var(--ty,0));
-  display: grid; place-items: center; font-size: 12px; color:#000;
+  width: clamp(32px, 3.5vw, 44px);
+  height: clamp(32px, 3.5vw, 44px);
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.8), 0 0 20px rgba(255,255,255,0.4), 0 0 0 3px rgba(0,0,0,0.3);
+  position: absolute;
+  bottom: 50%;
+  left: 50%;
+  transform: translate(calc(-50% + var(--tx, 0)), calc(-50% + var(--ty, 0)));
+  display: grid;
+  place-items: center;
+  color: #fff;
+  text-shadow: 0 0 6px rgba(0,0,0,0.8), 0 2px 4px rgba(0,0,0,0.6);
+  font-size: clamp(12px, 1.4vw, 17px);
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 20;
+  animation: tokenGlow 2s ease-in-out infinite;
 }
-.token::before{ content:"♟"; }
-.token[data-p="1"] { --tx: 20px; }
-.token[data-p="2"] { --tx: 40px; }
-.token[data-p="3"] { --tx: 60px; }
-.token[data-p="4"] { --tx: 80px; }
+.token[data-p="0"] { --tx: 0px; --ty: 0px; }
+.token[data-p="1"] { --tx: clamp(8px, 1vw, 12px); --ty: clamp(8px, 1vw, 12px); }
+.token[data-p="2"] { --tx: clamp(-8px, -1vw, -12px); --ty: clamp(8px, 1vw, 12px); }
+.token[data-p="3"] { --tx: clamp(8px, 1vw, 12px); --ty: clamp(-8px, -1vw, -12px); }
 
-/* 房屋／旅館小標示 */
-.house-stack{ position:absolute; left:2px; top:2px; display:flex; gap:2px; }
-.house{ width:8px; height:6px; background:#10b981; border:1px solid rgba(0,0,0,.2); border-radius:2px; }
-.hotel{ width:10px; height:8px; background:#ef4444; border:1px solid rgba(0,0,0,.25); border-radius:2px; }
+@keyframes tokenGlow {
+  0%, 100% { 
+    transform: translate(calc(-50% + var(--tx, 0)), calc(-50% + var(--ty, 0))) scale(1); 
+    box-shadow: 0 6px 16px rgba(0,0,0,0.8), 0 0 20px rgba(255,255,255,0.4), 0 0 0 3px rgba(0,0,0,0.3);
+  }
+  50% { 
+    transform: translate(calc(-50% + var(--tx, 0)), calc(-50% + var(--ty, 0))) scale(1.15); 
+    box-shadow: 0 8px 20px rgba(0,0,0,0.9), 0 0 30px rgba(255,255,255,0.6), 0 0 0 3px rgba(0,0,0,0.3);
+  }
+}
+
+.house-stack { position: absolute; left: 2px; top: 2px; display: flex; gap: 1px; z-index: 5; }
+.house { width: clamp(5px, 0.6vw, 8px); height: clamp(4px, 0.5vw, 6px); background: #10b981; border: 1px solid rgba(0,0,0,0.2); border-radius: 1px; }
+.hotel { width: clamp(7px, 0.8vw, 10px); height: clamp(5px, 0.6vw, 8px); background: #ef4444; border: 1px solid rgba(0,0,0,0.3); border-radius: 2px; }
+
+.center-panel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 63.6%;
+  height: 63.6%;
+  background: rgba(255, 255, 255, 0.96);
+  border: 2px solid #333;
+  border-radius: 10px;
+  padding: clamp(8px, 1vw, 14px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, 0.8vw, 10px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.center-panel.collapsed {
+  width: auto;
+  height: auto;
+  padding: 6px 10px;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 6px;
+  border-bottom: 2px solid #ddd;
+  flex-shrink: 0;
+}
+.panel-header h1 {
+  font-size: clamp(12px, 1.4vw, 18px);
+  color: #333;
+  font-weight: 700;
+}
+.panel-toggle {
+  background: #667eea;
+  color: #fff;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: clamp(10px, 1.1vw, 13px);
+  font-weight: 600;
+  transition: background 0.2s;
+}
+.panel-toggle:hover { background: #5568d3; }
+
+.panel-content {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, 0.8vw, 10px);
+}
+.panel-content.hidden { display: none; }
+
+.section {
+  background: #f8f9fa;
+  padding: clamp(6px, 0.8vw, 10px);
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+}
+.section h2 {
+  font-size: clamp(11px, 1.2vw, 15px);
+  margin-bottom: 6px;
+  color: #495057;
+  font-weight: 700;
+}
+
+.top-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(6px, 0.8vw, 10px);
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+}
+.current-player-area, .players-area {
+  background: #f8f9fa;
+  padding: clamp(6px, 0.8vw, 10px);
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+}
+.current-player-area h2, .players-area h2 {
+  font-size: clamp(10px, 1.1vw, 14px);
+  margin-bottom: 4px;
+}
+
+.dice-container {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 4px 0;
+}
+.die {
+  width: clamp(30px, 3.5vw, 44px);
+  height: clamp(30px, 3.5vw, 44px);
+  display: grid;
+  place-items: center;
+  border: 2px solid #495057;
+  border-radius: 6px;
+  background: #fff;
+  font-weight: 700;
+  font-size: clamp(16px, 2vw, 22px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+.turn-info {
+  font-size: clamp(10px, 1.1vw, 13px);
+  color: #666;
+  margin-top: 4px;
+}
+
+.player-row {
+  display: grid;
+  grid-template-columns: clamp(10px, 1.2vw, 14px) 1fr auto;
+  gap: 4px;
+  align-items: center;
+  padding: 2px 0;
+  font-size: clamp(9px, 1vw, 12px);
+}
+.player-swatch {
+  width: clamp(8px, 1vw, 12px);
+  height: clamp(8px, 1vw, 12px);
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.3);
+}
+.player-name { font-weight: 600; }
+.player-cash { font-variant-numeric: tabular-nums; color: #28a745; font-weight: 600; }
+
+.controls-section {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: clamp(4px, 0.5vw, 6px);
+}
+button {
+  border: 1px solid #ced4da;
+  background: #fff;
+  color: #212529;
+  padding: clamp(5px, 0.6vw, 8px) clamp(6px, 0.7vw, 10px);
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: clamp(9px, 1vw, 12px);
+  font-weight: 600;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+button:hover:not(:disabled) { background: #e9ecef; transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+button:active:not(:disabled) { transform: translateY(0); }
+button.primary { background: #2b6ef3; color: #fff; border-color: #2b6ef3; }
+button.ok { background: #28a745; color: #fff; border-color: #28a745; }
+button.danger { background: #dc3545; color: #fff; border-color: #dc3545; }
+
+.log-section {
+  flex: 3;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.log-content {
+  flex: 1;
+  overflow-y: auto;
+  font-size: clamp(9px, 1vw, 12px);
+  line-height: 1.4;
+}
+.log-entry {
+  border-top: 1px dashed #dee2e6;
+  padding: 3px 0;
+}
+.log-entry.me {
+  background: #fff3cd;
+  border-left: 3px solid #ffc107;
+  padding-left: 6px;
+  margin-left: -6px;
+}
 
 .toast {
-  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  background: rgba(0,0,0,.75); color:#fff; padding: 10px 14px; border-radius: 10px;
-  font-size: 14px; text-align: center; max-width: 80%; pointer-events: none;
-  opacity: 1; transition: opacity .6s ease;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: clamp(12px, 1.3vw, 16px);
+  text-align: center;
+  max-width: 80%;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.6s ease;
+  z-index: 200;
+  font-weight: 600;
 }
 .toast.hidden { opacity: 0; }
 
-.sidebar { display: grid; gap: 12px; }
-.panel {
-  background:#fff; border:1px solid #e6e8ef; border-radius: 10px; padding: 10px;
+.modal {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 300;
 }
-.panel h2, .panel h3 { margin: 0 0 8px; }
-
-.players .row { display: grid; grid-template-columns: 16px 1fr auto; gap: 8px; align-items: center; padding: 4px 0; }
-.players .swatch { width: 14px; height: 14px; border-radius: 50%; border:1px solid rgba(0,0,0,.2); }
-.players .name { font-weight: 700; }
-.players .cash { font-variant-numeric: tabular-nums; }
-
-.dice { display:flex; gap: 8px; align-items: center; }
-.die {
-  width: 44px; height: 44px; display:grid; place-items:center; border:1px solid #cfd5e5; border-radius: 8px; background:#fff; font-weight:700; font-size: 20px;
-}
-@media (max-width: 520px){ .die{ width: 40px; height: 40px; font-size: 18px; } }
-
-.turninfo { min-height: 24px; color:#444; font-size: 13px; }
-
-.log { max-height: 300px; overflow:auto; }
-.log #log { font-size: 13px; line-height: 1.4; white-space: pre-wrap; }
-.log .entry { border-top:1px dashed #e6e8ef; padding: 6px 0; }
-.log .me { background: #fff7e6; border-left: 3px solid #f8b84a; padding-left: 6px; }
-
-.modal { position: fixed; inset:0; display: grid; place-items: center; background: rgba(0,0,0,.35); }
 .modal.hidden { display: none; }
 .modal-content {
-  width: min(560px, 92vw); background: #fff; border-radius: 12px; border:1px solid #cfd5e5; padding: 16px;
+  width: min(400px, 90vw);
+  background: #fff;
+  border-radius: 12px;
+  border: 2px solid #333;
+  padding: 16px;
 }
-.modal-actions { display:flex; justify-content:flex-end; gap: 8px; margin-top: 12px; }
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
 
-.drawer { position: fixed; inset: 0; background: rgba(0,0,0,.35); display: grid; place-items: end; }
+.drawer {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: grid;
+  place-items: end;
+  z-index: 300;
+}
 .drawer.hidden { display: none; }
-.drawer-content { width: min(760px, 96vw); height: min(80vh, 760px); background:#fff; border-radius: 12px 12px 0 0; border:1px solid #cfd5e5; padding: 12px; display: grid; grid-template-rows: auto 1fr; }
-.drawer-header { display:flex; align-items:center; justify-content: space-between; gap: 8px; }
-#assetsBody { overflow:auto; }
+.drawer-content {
+  width: min(600px, 95vw);
+  height: min(70vh, 600px);
+  background: #fff;
+  border-radius: 12px 12px 0 0;
+  border: 2px solid #333;
+  padding: 12px;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e0e0e0;
+}
+.drawer-header h3 {
+  font-size: clamp(13px, 1.4vw, 17px);
+  font-weight: 700;
+}
+#assetsBody { overflow: auto; }
 
-.asset-table { width:100%; border-collapse: collapse; }
-.asset-table th, .asset-table td { border:1px solid #e6e8ef; padding: 6px; font-size: 13px; }
-.asset-table th { background:#f6f7fb; }
-.asset-table button { padding: 4px 6px; font-size: 12px; }
+.asset-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: clamp(10px, 1.1vw, 13px);
+}
+.asset-table th, .asset-table td {
+  border: 1px solid #dee2e6;
+  padding: 6px;
+}
+.asset-table th { background: #f8f9fa; font-weight: 600; }
+.asset-table button {
+  padding: 4px 6px;
+  font-size: clamp(9px, 1vw, 11px);
+}
 
-footer { text-align: center; padding: 8px 12px; color:#666; font-size: 12px; }
+#diag {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 6px 10px;
+  font-size: clamp(10px, 1.1vw, 12px);
+  background: #28a745;
+  color: #fff;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  z-index: 400;
+}
+#diag.err { background: #dc3545; }
 
-#diag{position:fixed;left:0;right:0;bottom:0;padding:6px 10px;font-size:12px;background:#16a34a;color:#fff;display:flex;gap:8px;align-items:center;z-index:10}
-#diag.err{background:#b91c1c}
+@media (max-width: 768px) {
+  .center-panel {
+    width: 85%;
+    height: 85%;
+  }
+  .top-section {
+    grid-template-columns: 1fr;
+  }
+  .controls-section {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 
+@media (max-width: 480px) {
+  .center-panel {
+    width: 92%;
+    height: 92%;
+  }
+  .tile .price { display: none; }
+}
   </style>
 </head>
 <body>
-  <header>
-    <h1>城市資本戰 <span class="tag">單檔版（v2.3.5）</span></h1>
-    <div class="controls">
-      <button id="btnRoll" class="primary">🎲 擲骰</button>
-      <button id="btnBuy" class="ok" disabled>買下地產</button>
-      <button id="btnSkip" disabled>略過/取消</button>
-      <button id="btnEnd" disabled>結束回合</button>
-      <button id="btnAssets">資產 / 建屋</button>
-      <button id="btnSave">存檔</button>
-      <button id="btnLoad">讀檔</button>
-      <button id="btnReset" class="danger">重新開始</button>
-    </div>
-  </header>
-
-  <main>
-    <section class="board-wrap">
-      <section class="board" id="board">
-        <div id="toast" class="toast hidden"></div>
-      </section>
+  <div id="game-container">
+    <section class="board" id="board">
+      <div id="toast" class="toast hidden"></div>
     </section>
-
-    <aside class="sidebar">
-      <div class="panel status">
-        <h2>當前玩家</h2>
-        <div id="currentPlayer"></div>
-        <div class="dice">
-          <div id="dice1" class="die">-</div>
-          <div id="dice2" class="die">-</div>
+    
+    <div class="center-panel" id="centerPanel">
+        <div class="panel-header">
+          <h1>🎲 大富翁</h1>
+          <button class="panel-toggle" id="panelToggle">收起</button>
         </div>
-        <div class="turninfo" id="turnInfo"></div>
+        
+        <div class="panel-content" id="panelContent">
+          <div class="section top-section">
+            <div class="current-player-area">
+              <h2>當前玩家</h2>
+              <div id="currentPlayer"></div>
+              <div class="dice-container">
+                <div id="dice1" class="die">-</div>
+                <div id="dice2" class="die">-</div>
+              </div>
+              <div class="turn-info" id="turnInfo"></div>
+            </div>
+            <div class="players-area">
+              <h2>玩家列表</h2>
+              <div id="playersPanel"></div>
+            </div>
+          </div>
+          
+          <div class="section controls-section">
+            <button id="btnRoll" class="primary">🎲 擲骰</button>
+            <button id="btnBuy" class="ok" disabled>買下</button>
+            <button id="btnSkip" disabled>略過</button>
+            <button id="btnEnd" disabled>結束</button>
+            <button id="btnAssets">資產</button>
+            <button id="btnSave">存檔</button>
+            <button id="btnLoad">讀檔</button>
+            <button id="btnReset" class="danger">重置</button>
+          </div>
+          
+          <div class="section log-section">
+            <h2>戰況紀錄</h2>
+            <div class="log-content" id="log"></div>
+          </div>
+        </div>
       </div>
-      <div class="panel players" id="playersPanel"></div>
-      <div class="panel log"><h2>戰況紀錄</h2><div id="log"></div></div>
-    </aside>
-  </main>
+    </div>
+  </div>
 
   <div id="modal" class="modal hidden">
     <div class="modal-content">
@@ -212,11 +515,7 @@ footer { text-align: center; padding: 8px 12px; color:#666; font-size: 12px; }
     </div>
   </div>
 
-  <footer>
-    <p>🧩 單檔版：所有 CSS/JS 內嵌，免路徑設定。若你的主機啟用嚴格 CSP（禁用 inline script），請改用 GitHub Pages 或放寬 CSP。</p>
-  </footer>
-
-  <div id="diag" style="position:fixed;left:0;right:0;bottom:0;padding:6px 10px;font-size:12px;background:#16a34a;color:#fff;z-index:10">✅ 單檔腳本已就緒。</div>
+  <div id="diag">✅ v2.3 初始化完成。</div>
 
   <script>
 window.__TYCOON_V23_READY__=true;
@@ -224,7 +523,7 @@ window.__TYCOON_V23_READY__=true;
 "use strict";
 (function(){
   var diagEl = document.getElementById('diag');
-  function diagOK(msg){ if (diagEl){ diagEl.className=''; diagEl.textContent='✅ '+msg; } }
+  function diagOK(msg){ if (diagEl){ diagEl.className=''; diagEl.textContent='✅ '+msg; setTimeout(function(){ diagEl.style.display='none'; }, 3000); } }
   function diagERR(msg){ if (diagEl){ diagEl.className='err'; diagEl.textContent='🚨 '+msg; } }
 
   window.addEventListener('error', function(e){ diagERR('JS 錯誤：'+(e.message||e)); });
@@ -344,8 +643,27 @@ window.__TYCOON_V23_READY__=true;
       for (var i=0;i<state.players.length;i++){
         var p=state.players[i]; if (!p.alive) continue; var pos=idxToCoord(p.pos);
         var cell=document.querySelector('#board > .tile[style*="grid-row: '+(pos.r+1)+';"][style*="grid-column: '+(pos.c+1)+';"]');
-        var tok=document.createElement('div'); tok.className='token'; tok.style.background=p.color; tok.setAttribute('data-p', String(i+1)); if (cell) cell.appendChild(tok);
+        var tok=document.createElement('div'); 
+        tok.className='token'; 
+        tok.style.background=p.color; 
+        tok.setAttribute('data-p', String(i)); 
+        tok.textContent = p.name; 
+        if (cell) cell.appendChild(tok);
       }
+    }
+    
+    // 棋子移動動畫
+    function animateTokenMove(playerIdx, steps, callback) {
+      if (steps <= 0) {
+        if (callback) callback();
+        return;
+      }
+      var p = state.players[playerIdx];
+      p.pos = (p.pos + 1) % 40;
+      renderTokens();
+      setTimeout(function() {
+        animateTokenMove(playerIdx, steps - 1, callback);
+      }, 250);
     }
     function updateOwners(){
       $$('.owner').forEach(function(el){ el.style.display='none'; });
@@ -378,7 +696,29 @@ window.__TYCOON_V23_READY__=true;
     // ---- 擲骰與移動（逐格動畫） ----
     function rollDice(){ var d1=1+Math.floor(Math.random()*6), d2=1+Math.floor(Math.random()*6); state.dice=[d1,d2]; $('#dice1').textContent=d1; $('#dice2').textContent=d2; return [d1,d2]; }
     async function onRoll(){ var p=state.players[state.cur]; if (p.inJail) return {again:false}; $('#btnRoll').disabled=true; var d=rollDice(), d1=d[0], d2=d[1]; var isDouble=d1===d2; if (isDouble){ state.doublesInRow++; if (state.doublesInRow>=3){ log('⚠️ '+p.name+' 連續第三次擲出雙骰，被送入獄。', !p.isAI); goToJail(p); $('#btnEnd').disabled=false; return {again:false}; } } else { state.doublesInRow=0; } await moveSteps(p, d1+d2); await resolveTile(p, d1+d2); if (isDouble && p.alive && !p.inJail){ $('#turnInfo').textContent='雙骰！你可再擲一次。'; $('#btnRoll').disabled=false; $('#btnEnd').disabled=true; return {again:true}; } else { $('#btnEnd').disabled=false; return {again:false}; } }
-    async function moveSteps(p, steps){ for (var i=0;i<steps;i++){ p.pos=(p.pos+1)%40; if (p.pos===0){ var bonus=START_SALARY; var bi=state.bonusNextGo.indexOf(p.id); if (bi>=0){ bonus+=100; state.bonusNextGo.splice(bi,1); } p.cash+=bonus; renderPlayers(); log('💵 '+p.name+' 經過起點，領 $'+bonus, !p.isAI); } renderTokens(); await sleep(120); } }
+    async function moveSteps(p, steps){ 
+      var playerIdx = state.players.indexOf(p);
+      return new Promise(function(resolve) {
+        animateTokenMove(playerIdx, steps, function() {
+          // 檢查是否經過起點
+          var passedGo = false;
+          for (var i = 0; i < steps; i++) {
+            var oldPos = (p.pos - steps + i + 40) % 40;
+            var newPos = (oldPos + 1) % 40;
+            if (newPos === 0) passedGo = true;
+          }
+          if (passedGo) {
+            var bonus=START_SALARY; 
+            var bi=state.bonusNextGo.indexOf(p.id); 
+            if (bi>=0){ bonus+=100; state.bonusNextGo.splice(bi,1); } 
+            p.cash+=bonus; 
+            renderPlayers(); 
+            log('💵 '+p.name+' 經過起點，領 $'+bonus, !p.isAI);
+          }
+          resolve();
+        });
+      });
+    }
 
     // ---- 所有權與群組 ----
     function ownerOf(idx){ for (var i=0;i<state.players.length;i++){ var pl=state.players[i]; if (!pl.alive) continue; if (pl.properties.indexOf(idx)>=0) return i; } return -1; }
@@ -596,7 +936,7 @@ window.__TYCOON_V23_READY__=true;
     async function moveTo(p, idx, passGoCredit){ while (p.pos!==idx){ p.pos=(p.pos+1)%40; if (p.pos===0 && passGoCredit){ var bonus=START_SALARY; var bi=state.bonusNextGo.indexOf(p.id); if (bi>=0){ bonus+=100; state.bonusNextGo.splice(bi,1); } p.cash+=bonus; renderPlayers(); log('💵 '+p.name+' 經過起點，領 $'+bonus, !p.isAI); } renderTokens(); await sleep(80); } }
     async function moveToNearest(p, types, diceTotal, thenResolve, doubleRentOnStation){
       var i=p.pos; while (true){ i=(i+1)%40; var t=tiles[i]; if (types.indexOf(t.type)>=0){ await moveTo(p, i, true);
-        if (thenResolve){ if (t.type==="UTILITY") await onLandUtility(p, t, diceTotal); else if (t.type==="STATION"){ var ownerIdx=ownerOf(t.idx); if (doubleRentOnStation && ownerIdx>=0 && ownerIdx!==state.cur){ var owner=state.players[ownerIdx]; if (owner.mortgaged.indexOf(t.idx)<0){ var ownerStations=[5,15,25,35].filter(function(s){ return owner.properties.indexOf(s)>=0 && owner.mortgaged.indexOf(s)<0; }).length; var rent=STATION_RENTS[clamp(ownerStations-1,0,3)]; await payToPlayer(p, owner, rent*2, '雙倍車站租金（機會卡）《'+t.name+'》'); return; } } await onLandStation(p, t); } } return; } }
+        if (thenResolve){ if (t.type==="UTILITY") await onLandUtility(p, t, diceTotal); else if (t.type==="STATION"){ var ownerIdx=ownerOf(t.idx); if (doubleRentOnStation && ownerIdx>=0 && ownerIdx!==state.cur){ var owner=state.players[ownerIdx]; if (owner.mortgaged.indexOf(t.idx)<0){ var ownerStations=[5,15,25,35].filter(function(s){ return owner.properties.indexOf(s)>=0 && owner.mortgaged.indexOf(s)<0; }).length; var rent=STATION_RENTS[clamp(ownerStations-1,0,3)]; await payToPlayer(p, owner, rent*2, '雙倍車站租金（機會卡）《'+t.name+'》'); return; } } await onLandStation(p, t); } } return; } } }
     async function moveBack(p, steps){ for (var i=0;i<steps;i++){ p.pos=(p.pos-1+40)%40; renderTokens(); await sleep(80); } }
 
     // ---- 監獄 ----
@@ -752,38 +1092,73 @@ window.__TYCOON_V23_READY__=true;
     buildBoard();
     renderTokens();
     document.getElementById('btnEnd').disabled = true;
-  }
+  } // main 函數結束
 })();
   </script>
-
-<!-- v2.3.6 強制啟動保險器 -->
-<script>
-(function(){
-  function ready(fn){
-    if (document.readyState !== 'loading') fn();
-    else document.addEventListener('DOMContentLoaded', fn);
-  }
-  function showErr(msg){
-    var bar = document.getElementById('diag') || (function(){
-      var d=document.createElement('div'); d.id='diag'; document.body.appendChild(d); return d;
-    })();
-    bar.style.cssText='position:fixed;left:0;right:0;bottom:0;padding:6px 10px;font-size:12px;background:#b91c1c;color:#fff;z-index:10';
-    bar.textContent='🚨 '+msg;
-    console.error(msg);
-  }
-  ready(function(){
-    try{
-      if (typeof boot === 'function') {
-        boot();
-      } else {
-        showErr('找不到 boot()，請檢查 Console 第一個紅字錯誤。');
-      }
-    }catch(err){
-      showErr('啟動失敗：' + (err && err.message || err));
+  <script>
+  // 面板折疊功能
+  (function(){
+    const panel = document.getElementById('centerPanel');
+    const toggle = document.getElementById('panelToggle');
+    const content = document.getElementById('panelContent');
+    
+    if (toggle && panel && content) {
+      toggle.addEventListener('click', function() {
+        panel.classList.toggle('collapsed');
+        content.classList.toggle('hidden');
+        toggle.textContent = panel.classList.contains('collapsed') ? '展開' : '收起';
+      });
     }
-  });
-})();
-</script>
+  })();
+  
+  // 房屋等級顯示功能
+  (function(){
+    // 等待 DOM 完全載入
+    if (typeof window.updateLevelBadges === 'undefined') {
+      window.updateLevelBadges = function(){
+        // 移除所有現有的等級標記
+        var badges = document.querySelectorAll('.level-badge');
+        badges.forEach(function(el){ el.remove(); });
+        
+        // 遍歷所有有房屋的地產
+        if (typeof state === 'undefined' || !state.houses) return;
+        
+        Object.keys(state.houses).forEach(function(k){
+          var idx = Number(k);
+          var level = state.houses[k] | 0;
+          if (!level) return;
+          
+          // 找到對應的格子
+          var pos = idxToCoord(idx);
+          var cell = document.querySelector('#board > .tile[style*="grid-row: '+(pos.r+1)+';"[style*="grid-column: '+(pos.c+1)+';"');
+          if (!cell) return;
+          
+          // 創建等級標記
+          var badge = document.createElement('div');
+          badge.className = 'level-badge';
+          
+          if (level === 5) {
+            badge.textContent = 'LV5';
+            badge.classList.add('hotel');
+          } else {
+            badge.textContent = 'LV' + level;
+          }
+          
+          cell.appendChild(badge);
+        });
+      };
+      
+      // 覆蓋原始的 renderHouses 函數
+      if (typeof window.originalRenderHouses === 'undefined' && typeof renderHouses !== 'undefined') {
+        window.originalRenderHouses = renderHouses;
+        window.renderHouses = function() {
+          window.originalRenderHouses();
+          window.updateLevelBadges();
+        };
+      }
+    }
+  })();
+  </script>
 
 </body>
 </html>
