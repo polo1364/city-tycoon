@@ -1,29 +1,16 @@
-// 城市資本戰 Web 版（多檔案＋診斷）
+// 城市資本戰 Web 版 v2（多檔案＋行動優化＋AI 強化）
 "use strict";
 (function(){
-  // --------- 診斷 ---------
   var diagEl = document.getElementById('diag');
-  function diagOK(msg){ if (diagEl){ diagEl.className='ok'; diagEl.textContent='✅ '+msg; } }
+  function diagOK(msg){ if (diagEl){ diagEl.className=''; diagEl.textContent='✅ '+msg; } }
   function diagERR(msg){ if (diagEl){ diagEl.className='err'; diagEl.textContent='🚨 '+msg; } }
+
   window.addEventListener('error', function(e){ diagERR('JS 錯誤：'+(e.message||e)); });
   window.addEventListener('unhandledrejection', function(e){ diagERR('Promise 錯誤：'+(e.reason&&e.reason.message||e.reason)); });
 
-  // DOM Ready（defer 已保證，但保險起見）
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", boot);
-  } else {
-    boot();
-  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 
-  function boot(){
-    try {
-      main();
-      diagOK("JS 初始化成功。如果按鈕灰掉，代表目前輪到 AI。");
-    } catch (err) {
-      diagERR("初始化失敗：" + (err && err.message ? err.message : err));
-      console.error(err);
-    }
-  }
+  function boot(){ try{ main(); diagOK("JS 初始化成功。如果按鈕灰掉，代表目前輪到 AI。"); }catch(err){ diagERR("初始化失敗："+(err&&err.message||err)); console.error(err); } }
 
   function main(){
     var $ = function(s){ return document.querySelector(s); };
@@ -144,7 +131,7 @@
     }
 
     function buildBoard(){
-      var board=document.getElementById('board'); board.innerHTML="";
+      var board=document.getElementById('board'); board.innerHTML='<div id="toast" class="toast hidden"></div>';
       for (var r=0;r<11;r++){ for (var c=0;c<11;c++){ var cell=document.createElement('div'); cell.className='tile empty'; cell.style.gridRow=(r+1); cell.style.gridColumn=(c+1); board.appendChild(cell); } }
       for (var k=0;k<tiles.length;k++){
         var t=tiles[k]; var pos=idxToCoord(t.idx); var cell=document.createElement('div'); cell.className='tile'; cell.style.gridRow=(pos.r+1); cell.style.gridColumn=(pos.c+1);
@@ -168,7 +155,22 @@
     function renderPlayers(){
       var panel=document.getElementById('playersPanel'); var html=""; for (var i=0;i<state.players.length;i++){ var p=state.players[i]; if (!p.alive) continue; html+='<div class="row"><div class="swatch" style="background:'+p.color+'"></div><div class="name">'+(i===state.cur?"⭐ ":"")+p.name+(p.inJail?"（獄）":"")+(p.outCard>0?"🃏":"")+'</div><div class="cash">$'+p.cash+'</div></div>'; } panel.innerHTML=html; document.getElementById('currentPlayer').textContent = state.players[state.cur].name;
     }
-    function log(msg, highlightMe){ if (highlightMe===void 0) highlightMe=false; var logEl=document.getElementById('log'); var div=document.createElement('div'); div.className='entry'+(highlightMe?' me':''); div.textContent=msg; logEl.prepend(div); }
+    function toast(msg){
+      var t=document.getElementById('toast'); if (!t) return;
+      t.textContent=msg; t.classList.remove('hidden');
+      clearTimeout(toast._tid); toast._tid=setTimeout(function(){ t.classList.add('hidden'); }, 1500);
+    }
+    function log(msg, highlightMe){
+      if (highlightMe===void 0) highlightMe=false;
+      var logEl=document.getElementById('log'); var div=document.createElement('div'); div.className='entry'+(highlightMe?' me':''); div.textContent=msg; logEl.prepend(div);
+      toast(msg);
+    }
+
+    function endTurn(){
+      var p=state.players[state.cur];
+      p.rentBonusTemp=0;
+      nextPlayer();
+    }
 
     function nextPlayer(){
       do { state.cur=(state.cur+1)%state.players.length; } while(!state.players[state.cur].alive);
@@ -176,7 +178,7 @@
       document.getElementById('btnRoll').disabled = state.players[state.cur].isAI;
       document.getElementById('btnEnd').disabled = true; document.getElementById('btnBuy').disabled = true; document.getElementById('btnSkip').disabled = true;
       document.getElementById('dice1').textContent='-'; document.getElementById('dice2').textContent='-'; document.getElementById('turnInfo').textContent='';
-      checkWin();
+      if (checkWin()) return;
       if (state.players[state.cur].isAI) { aiTurn(); } else { if (state.players[state.cur].inJail) showJailOptions(state.players[state.cur]); }
     }
     function checkWin(){
@@ -212,11 +214,13 @@
 
     function rollDice(){ var d1=1+Math.floor(Math.random()*6), d2=1+Math.floor(Math.random()*6); state.dice=[d1,d2]; document.getElementById('dice1').textContent=d1; document.getElementById('dice2').textContent=d2; return [d1,d2]; }
     async function onRoll(){
-      var p=state.players[state.cur]; if (p.inJail) return; document.getElementById('btnRoll').disabled=true;
+      var p=state.players[state.cur]; if (p.inJail) return {again:false};
+      document.getElementById('btnRoll').disabled=true;
       var d=rollDice(), d1=d[0], d2=d[1]; var isDouble=d1===d2;
-      if (isDouble){ state.doublesInRow++; if (state.doublesInRow>=3){ log('⚠️ '+p.name+' 連續第三次擲出雙骰，被送入獄。', !p.isAI); goToJail(p); document.getElementById('btnEnd').disabled=false; return; } } else { state.doublesInRow=0; }
+      if (isDouble){ state.doublesInRow++; if (state.doublesInRow>=3){ log('⚠️ '+p.name+' 連續第三次擲出雙骰，被送入獄。', !p.isAI); goToJail(p); document.getElementById('btnEnd').disabled=false; return {again:false}; } } else { state.doublesInRow=0; }
       await moveSteps(p, d1+d2); await resolveTile(p, d1+d2);
-      if (isDouble && p.alive && !p.inJail){ document.getElementById('turnInfo').textContent='雙骰！你可再擲一次。'; document.getElementById('btnRoll').disabled=false; document.getElementById('btnEnd').disabled=true; } else { document.getElementById('btnEnd').disabled=false; }
+      if (isDouble && p.alive && !p.inJail){ document.getElementById('turnInfo').textContent='雙骰！你可再擲一次。'; document.getElementById('btnRoll').disabled=false; document.getElementById('btnEnd').disabled=true; return {again:true}; }
+      else { document.getElementById('btnEnd').disabled=false; return {again:false}; }
     }
     async function moveSteps(p, steps){
       for (var i=0;i<steps;i++){ p.pos=(p.pos+1)%40; if (p.pos===0){ var bonus=START_SALARY; var bi=state.bonusNextGo.indexOf(p.id); if (bi>=0){ bonus+=100; state.bonusNextGo.splice(bi,1); } p.cash+=bonus; renderPlayers(); log('💵 '+p.name+' 經過起點，領 $'+bonus, !p.isAI); } renderTokens(); await sleep(120); }
@@ -228,6 +232,7 @@
       var pl=state.players[ownerIdx]; var cnt=0; for (var k=0;k<groupSlots.length;k++){ var idx=groupSlots[k]; if (pl.properties.indexOf(idx)>=0 && pl.mortgaged.indexOf(idx)<0) cnt++; } return {cnt:cnt,total:groupSlots.length};
     }
 
+    // ---- 地格處理 ----
     async function resolveTile(p, diceTotal){
       var t=tiles[p.pos];
       if (t.type==="PROPERTY") await onLandProperty(p,t);
@@ -240,12 +245,30 @@
       else if (t.type==="JAIL") log(p.name+' 只是來探監。', !p.isAI);
       else if (t.type==="FREE") log(p.name+' 於休息區放鬆片刻。', !p.isAI);
     }
+
+    // --- AI 購買策略: 現金預留 200；若能湊成一色組則盡量買。 ---
+    function aiShouldBuyProperty(p, t){
+      var reserve = 200;
+      var willHave = p.cash - t.price;
+      // 若買下即可全套（無抵押且全擁有） => 一律買
+      var same = tiles.filter(function(x){ return x.type==="PROPERTY" && x.group===t.group; });
+      var owned = same.filter(function(x){ return p.properties.indexOf(x.idx)>=0 && p.mortgaged.indexOf(x.idx)<0; }).length;
+      var total = same.length;
+      if (owned+1 === total) return p.cash >= t.price; // 湊套必買（只要買得起）
+      // 一般情況：保留現金
+      return willHave >= reserve;
+    }
+    function aiShouldBuyStation(p){ return p.cash >= 350 || [5,15,25,35].some(function(s){ return p.properties.indexOf(s)>=0; }); }
+    function aiShouldBuyUtility(p){ return p.cash >= 250 || [12,28].some(function(u){ return p.properties.indexOf(u)>=0; }); }
+
     async function onLandProperty(p,t){
       var idx=t.idx, base=baseRent(t.price), ownerIdx=ownerOf(idx);
       if (ownerIdx<0){
-        var canBuy=p.cash>=t.price;
-        if (!p.isAI){ document.getElementById('btnBuy').disabled=!canBuy; document.getElementById('btnSkip').disabled=false; state.awaitingBuy=true; document.getElementById('turnInfo').textContent=canBuy?('可用 $'+t.price+' 購買《'+t.name+'》'):'資金不足，無法購買。'; }
-        else { if (p.cash>=t.price+150) buyProperty(p, idx, t.price); else log('🤔 '+p.name+' 放棄購買《'+t.name+'》', true); }
+        if (!p.isAI){
+          var canBuy=p.cash>=t.price; document.getElementById('btnBuy').disabled=!canBuy; document.getElementById('btnSkip').disabled=false; state.awaitingBuy=true; document.getElementById('turnInfo').textContent=canBuy?('可用 $'+t.price+' 購買《'+t.name+'》'):'資金不足，無法購買。';
+        } else {
+          if (aiShouldBuyProperty(p,t)) buyProperty(p, idx, t.price); else log('🤔 '+p.name+' 放棄購買《'+t.name+'》', true);
+        }
       } else if (ownerIdx===state.cur){
         log(p.name+' 來到自己的地《'+t.name+'》。', !p.isAI);
       } else {
@@ -259,7 +282,7 @@
       if (ownerIdx<0){
         var price=200;
         if (!p.isAI){ document.getElementById('turnInfo').textContent='可用 $'+price+' 購買《'+t.name+'》'; state.awaitingBuy=true; document.getElementById('btnBuy').disabled=!(p.cash>=price); document.getElementById('btnSkip').disabled=false; }
-        else { if (p.cash>=350) buyProperty(p, idx, price); }
+        else { if (aiShouldBuyStation(p)) buyProperty(p, idx, price); else log('🤔 '+p.name+' 放棄購買《'+t.name+'》', true); }
       } else if (ownerIdx===state.cur){
         log(p.name+' 來到自己的《'+t.name+'》。', !p.isAI);
       } else {
@@ -274,7 +297,7 @@
       if (ownerIdx<0){
         var price=150;
         if (!p.isAI){ document.getElementById('turnInfo').textContent='可用 $'+price+' 購買《'+t.name+'》'; state.awaitingBuy=true; document.getElementById('btnBuy').disabled=!(p.cash>=price); document.getElementById('btnSkip').disabled=false; }
-        else { if (p.cash>=250) buyProperty(p, idx, price); }
+        else { if (aiShouldBuyUtility(p)) buyProperty(p, idx, price); else log('🤔 '+p.name+' 放棄購買《'+t.name+'》', true); }
       } else if (ownerIdx===state.cur){
         log(p.name+' 來到自己的《'+t.name+'》。', !p.isAI);
       } else {
@@ -362,34 +385,60 @@
       var jTry=document.getElementById('jTry'); if (jTry) jTry.addEventListener('click', async function(){ document.getElementById('modal').classList.add('hidden'); var d=rollDice(), d1=d[0], d2=d[1], dbl=d1===d2; if (dbl){ p.inJail=false; p.jailTurns=0; log(p.name+' 擲出雙骰，出獄並移動 '+(d1+d2)+' 步。', !p.isAI); await moveSteps(p, d1+d2); await resolveTile(p, d1+d2); document.getElementById('btnEnd').disabled=false; } else { p.jailTurns++; log(p.name+' 未擲出雙骰（第 '+p.jailTurns+'/3 回合）。', !p.isAI); if (p.jailTurns>=3){ await payToBank(p, JAIL_FINE, '保釋金'); if (!p.alive){ document.getElementById('btnEnd').disabled=false; return; } p.inJail=false; p.jailTurns=0; await onRoll(); } else { document.getElementById('btnEnd').disabled=false; } } }, {once:true});
     }
 
+    // --- 強化 AI 流程：自動二擲、結束回合、富餘現金自動贖回 ---
     async function aiTurn(){
-      var p=state.players[state.cur]; await sleep(400);
+      var p=state.players[state.cur];
+      await sleep(400);
+      // 在獄中：前兩回合嘗試擲骰，第三回合保釋
       if (p.inJail){
         if (p.jailTurns<2){
           var d=rollDice(), d1=d[0], d2=d[1], dbl=d1===d2;
-          if (dbl){ p.inJail=false; p.jailTurns=0; log(p.name+' 擲出雙骰出獄，移動 '+(d1+d2)+' 步。', true); await moveSteps(p, d1+d2); await resolveTile(p, d1+d2); document.getElementById('btnEnd').disabled=false; if (dbl && p.alive && !p.inJail){ await sleep(400); await onRoll(); } return; }
-          else { p.jailTurns++; log(p.name+' 嘗試失敗（第 '+p.jailTurns+'/3 回合）', true); document.getElementById('btnEnd').disabled=false; return; }
+          if (dbl){ p.inJail=false; p.jailTurns=0; log(p.name+' 擲出雙骰出獄，移動 '+(d1+d2)+' 步。', true); await moveSteps(p, d1+d2); await resolveTile(p, d1+d2); }
+          else { p.jailTurns++; log(p.name+' 嘗試失敗（第 '+p.jailTurns+'/3 回合）', true); }
         } else {
-          if (p.cash>=JAIL_FINE){ await payToBank(p, JAIL_FINE, '保釋金'); if (!p.alive){ document.getElementById('btnEnd').disabled=false; return; } p.inJail=false; p.jailTurns=0; }
-          else { await ensureCash(p, JAIL_FINE); if (!p.alive){ document.getElementById('btnEnd').disabled=false; return; } await payToBank(p, JAIL_FINE, '保釋金'); if (!p.alive){ document.getElementById('btnEnd').disabled=false; return; } p.inJail=false; p.jailTurns=0; }
+          await ensureCash(p, JAIL_FINE);
+          if (!p.alive){ endTurn(); return; }
+          await payToBank(p, JAIL_FINE, "保釋金");
+          if (!p.alive){ endTurn(); return; }
+          p.inJail=false; p.jailTurns=0;
+          var res = await onRoll();
+          if (res && res.again){ await sleep(400); await onRoll(); }
+          await aiUnmortgageIfRich(p);
+          endTurn(); return;
         }
+        await aiUnmortgageIfRich(p);
+        endTurn(); return;
       }
-      await onRoll();
+      // 一般回合：擲骰（若雙骰自動再擲）
+      var r = await onRoll();
+      if (r && r.again){ await sleep(400); r = await onRoll(); if (r && r.again){ await sleep(400); await onRoll(); } }
+      await aiUnmortgageIfRich(p);
+      endTurn();
+    }
+
+    async function aiUnmortgageIfRich(p){
+      // 若現金 > 500，按贖回成本由低到高贖回，直到保留 300
+      var reserve = 300;
+      var list = p.mortgaged.slice().sort(function(a,b){ return getPrice(tiles[a]) - getPrice(tiles[b]); });
+      for (var i=0;i<list.length;i++){
+        var idx=list[i]; var cost=Math.floor(getPrice(tiles[idx])*0.5*1.1);
+        if (p.cash - cost >= reserve) doUnmortgage(p, idx);
+      }
     }
 
     // 事件綁定
     document.getElementById('btnRoll').addEventListener('click', onRoll);
-    document.getElementById('btnEnd').addEventListener('click', function(){ var p=state.players[state.cur]; p.rentBonusTemp=0; nextPlayer(); });
+    document.getElementById('btnEnd').addEventListener('click', endTurn);
     document.getElementById('btnBuy').addEventListener('click', function(){ if (!state.awaitingBuy) return; var p=state.players[state.cur]; var t=tiles[p.pos]; var price=(t.type==="PROPERTY")?t.price:(t.type==="STATION"?200:150); buyProperty(p, t.idx, price); state.awaitingBuy=false; document.getElementById('btnBuy').disabled=true; document.getElementById('btnSkip').disabled=true; document.getElementById('btnEnd').disabled=false; });
     document.getElementById('btnSkip').addEventListener('click', function(){ state.awaitingBuy=false; document.getElementById('btnBuy').disabled=true; document.getElementById('btnSkip').disabled=true; document.getElementById('btnEnd').disabled=false; });
     document.getElementById('btnReset').addEventListener('click', function(){ if (confirm('確定要重新開始？')){ initPlayers(); buildBoard(); renderTokens(); document.getElementById('btnRoll').disabled=false; document.getElementById('btnEnd').disabled=true; document.getElementById('btnBuy').disabled=true; document.getElementById('btnSkip').disabled=true; document.getElementById('dice1').textContent='-'; document.getElementById('dice2').textContent='-'; document.getElementById('turnInfo').textContent=''; document.getElementById('log').innerHTML=''; } });
     document.getElementById('btnAssets').addEventListener('click', showAssets);
     document.getElementById('btnCloseAssets').addEventListener('click', function(){ document.getElementById('assetsPanel').classList.add('hidden'); });
 
-    // 存讀檔（localStorage）
+    // 存讀檔
     document.getElementById('btnSave').addEventListener('click', function(){
       try{
-        var save = JSON.stringify(state, function(k,v){ return v; });
+        var save = JSON.stringify(state);
         localStorage.setItem("tycoon_save", save);
         log("💾 已存檔（本機瀏覽器）。", false);
       }catch(e){ diagERR("存檔失敗："+(e&&e.message||e)); }
