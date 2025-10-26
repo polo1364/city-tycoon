@@ -95,6 +95,13 @@ body {
 .tile.free::after { content: "🅿️"; }
 
 .token {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(12px, 1.5vw, 16px);
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
   width: clamp(32px, 3.5vw, 44px);
   height: clamp(32px, 3.5vw, 44px);
   border-radius: 50%;
@@ -460,7 +467,34 @@ button.danger { background: #dc3545; color: #fff; border-color: #dc3545; }
   }
   .tile .price { display: none; }
 }
-  </style>
+  
+.center-panel.minimized {
+  width: 25%;
+  height: 25%;
+  opacity: 0.2;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.8);
+}
+
+
+.token.moving {
+  transform: translate(calc(-50% + var(--tx, 0)), calc(-50% + var(--ty, 0))) scale(2.5);
+  z-index: 30;
+  filter: drop-shadow(0 0 30px currentColor) drop-shadow(0 0 60px currentColor);
+  animation: pulse 0.4s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { transform: translate(calc(-50% + var(--tx, 0)), calc(-50% + var(--ty, 0))) scale(2.5); }
+  50% { transform: translate(calc(-50% + var(--tx, 0)), calc(-50% + var(--ty, 0))) scale(2.8); }
+}
+
+
+/* 玩家佔點 - 格子背景色 */
+.tile.owned {
+  background: var(--owner-color) !important;
+  opacity: 0.85;
+}
+</style>
 </head>
 <body>
   <div id="game-container">
@@ -550,6 +584,55 @@ window.__TYCOON_V23_READY__=true;
   function boot(){ try{ window.__TYCOON_V23_READY__=true; main(); diagOK("v2.3 初始化完成。"); }catch(err){ diagERR("初始化失敗："+(err&&err.message||err)); console.error(err); } }
 
   function main(){
+    // ========== 音效系統 ==========
+    let audioCtx = null;
+    
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+      }
+      return audioCtx;
+    }
+    
+    function playSound(type) {
+      try {
+        const ctx = initAudio();
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        
+        const config = {
+          roll: {freq: 440, dur: 0.1, vol: 0.3},
+          move: {freq: 523, dur: 0.05, vol: 0.1},
+          buy: {freq: 659, dur: 0.2, vol: 0.3},
+          build: {freq: 784, dur: 0.3, vol: 0.3},
+          error: {freq: 200, dur: 0.15, vol: 0.3},
+          click: {freq: 800, dur: 0.05, vol: 0.15}
+        }[type] || {freq: 440, dur: 0.1, vol: 0.2};
+        
+        oscillator.frequency.value = config.freq;
+        gainNode.gain.setValueAtTime(config.vol, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + config.dur);
+        
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + config.dur);
+      } catch(e) {
+        console.log('音效錯誤:', e);
+      }
+    }
+    
+    // 為所有按鈕添加點擊音效
+    function addButtonSounds() {
+      document.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          try { playSound('click'); } catch(e) {}
+        });
+      });
+    }
+    // ========== 音效系統結束 ==========
     var $ = function(s){ return document.querySelector(s); };
     var $$ = function(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); };
     function sleep(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
@@ -656,16 +739,72 @@ window.__TYCOON_V23_READY__=true;
     }
     function renderTokens(){
       $$('.token').forEach(function(e){ e.remove(); });
+      
+      // 按格子分組棋子
+      var tokensByCell = {};
       for (var i=0;i<state.players.length;i++){
-        var p=state.players[i]; if (!p.alive) continue; var pos=idxToCoord(p.pos);
-        var cell=document.querySelector('#board > .tile[style*="grid-row: '+(pos.r+1)+';"][style*="grid-column: '+(pos.c+1)+';"]');
-        var tok=document.createElement('div'); 
-        tok.className='token'; 
-        tok.style.background=p.color; 
-        tok.setAttribute('data-p', String(i)); 
-        tok.textContent = p.name; 
-        if (cell) cell.appendChild(tok);
+        var p=state.players[i]; 
+        if (!p.alive) continue; 
+        var key = p.pos;
+        if (!tokensByCell[key]) tokensByCell[key] = [];
+        tokensByCell[key].push({idx: i, player: p});
       }
+      
+      // 渲染每個格子的棋子
+      Object.keys(tokensByCell).forEach(function(posKey){
+        var tokens = tokensByCell[posKey];
+        var pos = idxToCoord(Number(posKey));
+        var cell = document.querySelector('#board > .tile[style*="grid-area: '+(pos.r+1)+' / '+(pos.c+1)+'"]');
+        if (!cell) return;
+        
+        // 創建棋子容器
+        var container = document.createElement('div');
+        container.className = 'token-container';
+        container.style.cssText = 'position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 2px; flex-wrap: wrap; padding: 2px;';
+        
+        tokens.forEach(function(t){
+          var tok = document.createElement('div'); 
+          tok.className = 'token'; 
+          tok.style.background = t.player.color; 
+          tok.setAttribute('data-p', String(t.idx)); 
+          tok.textContent = t.player.name;
+          
+          // 不同玩家使用不同形狀
+          if (t.idx === 0) {
+            // 玩家 1: 圓形
+            tok.style.borderRadius = '50%';
+          } else if (t.idx === 1) {
+            // 玩家 2: 方形
+            tok.style.borderRadius = '6px';
+          } else if (t.idx === 2) {
+            // 玩家 3: 三角形
+            tok.style.borderRadius = '0';
+            tok.style.clipPath = 'polygon(50% 0%, 0% 100%, 100% 100%)';
+          } else if (t.idx === 3) {
+            // 玩家 4: 菱形
+            tok.style.borderRadius = '0';
+            tok.style.transform = 'rotate(45deg)';
+            var inner = document.createElement('span');
+            inner.textContent = tok.textContent;
+            inner.style.transform = 'rotate(-45deg)';
+            inner.style.display = 'inline-block';
+            tok.textContent = '';
+            tok.appendChild(inner);
+          }
+          
+          // 多個棋子時縮小
+          if (tokens.length > 1) {
+            var size = tokens.length === 2 ? '28px' : (tokens.length === 3 ? '24px' : '20px');
+            tok.style.width = size;
+            tok.style.height = size;
+            tok.style.fontSize = tokens.length === 2 ? '12px' : (tokens.length === 3 ? '10px' : '9px');
+          }
+          
+          container.appendChild(tok);
+        });
+        
+        cell.appendChild(container);
+      });
     }
     
     // 棋子移動動畫
@@ -707,8 +846,34 @@ window.__TYCOON_V23_READY__=true;
       moveStep(steps);
     }
     function updateOwners(){
+      // 移除所有格子的 owned class
+      $$('.tile').forEach(function(tile){ tile.classList.remove('owned'); tile.style.backgroundColor = ''; });
       $$('.owner').forEach(function(el){ el.style.display='none'; });
-      for (var pi=0;pi<state.players.length;pi++){ var pl=state.players[pi]; if (!pl.alive) continue; for (var j=0;j<pl.properties.length;j++){ var idx=pl.properties[j]; var pos=idxToCoord(idx); var cell=document.querySelector('#board > .tile[style*="grid-row: '+(pos.r+1)+';"][style*="grid-column: '+(pos.c+1)+';"] .owner'); if (cell){ cell.style.display='block'; cell.style.background=pl.color; } } }
+      
+      for (var pi=0;pi<state.players.length;pi++){ 
+        var pl=state.players[pi]; 
+        if (!pl.alive) continue; 
+        
+        for (var j=0;j<pl.properties.length;j++){ 
+          var idx=pl.properties[j]; 
+          var pos=idxToCoord(idx); 
+          
+          // 找到格子
+          var tile=document.querySelector('#board > .tile[style*="grid-area: '+(pos.r+1)+' / '+(pos.c+1)+'"]');
+          if (tile) {
+            // 添加 owned class 並設置背景色
+            tile.classList.add('owned');
+            tile.style.backgroundColor = pl.color;
+          }
+          
+          // 更新 owner 小圓點
+          var ownerEl=document.querySelector('#board > .tile[style*="grid-area: '+(pos.r+1)+' / '+(pos.c+1)+'"] .owner');
+          if (ownerEl){ 
+            ownerEl.style.display='block'; 
+            ownerEl.style.background=pl.color; 
+          }
+        } 
+      }
     }
     function renderHouses(){
       $$('.house-stack').forEach(function(s){ s.innerHTML=''; });
@@ -721,7 +886,28 @@ window.__TYCOON_V23_READY__=true;
     }
 
     function renderPlayers(){
-      var panel=document.getElementById('playersPanel'); var html=""; for (var i=0;i<state.players.length;i++){ var p=state.players[i]; if (!p.alive) continue; html+='<div class="row"><div class="swatch" style="background:'+p.color+'"></div><div class="name">'+(i===state.cur?"⭐ ":"")+p.name+(p.inJail?"（獄）":"")+(p.outCard>0?"🃏":"")+'</div><div class="cash">$'+p.cash+'</div></div>'; } panel.innerHTML=html; document.getElementById('currentPlayer').textContent = state.players[state.cur].name;
+      var panel=document.getElementById('playersPanel'); 
+      var html=""; 
+      for (var i=0;i<state.players.length;i++){ 
+        var p=state.players[i]; 
+        if (!p.alive) continue; 
+        
+        // 創建形狀標記
+        var shapeStyle = 'width: 20px; height: 20px; background:' + p.color + '; display: inline-block; margin-right: 8px;';
+        if (i === 0) {
+          shapeStyle += ' border-radius: 50%;'; // 圓形
+        } else if (i === 1) {
+          shapeStyle += ' border-radius: 3px;'; // 方形
+        } else if (i === 2) {
+          shapeStyle += ' clip-path: polygon(50% 0%, 0% 100%, 100% 100%);'; // 三角形
+        } else if (i === 3) {
+          shapeStyle += ' transform: rotate(45deg);'; // 菱形
+        }
+        
+        html+='<div class="row"><div class="swatch" style="'+shapeStyle+'"></div><div class="name">'+(i===state.cur?"⭐ ":"")+p.name+(p.inJail?"（獄）":"")+(p.outCard>0?"🃏":"")+'</div><div class="cash">$'+p.cash+'</div></div>'; 
+      } 
+      panel.innerHTML=html; 
+      document.getElementById('currentPlayer').textContent = state.players[state.cur].name;
     }
     function toast(msg){ var t=document.getElementById('toast'); if (!t) return; t.textContent=msg; t.classList.remove('hidden'); clearTimeout(toast._tid); toast._tid=setTimeout(function(){ t.classList.add('hidden'); }, 1500); }
     function log(msg, highlightMe){ if (highlightMe===void 0) highlightMe=false; var logEl=document.getElementById('log'); var div=document.createElement('div'); div.className='entry'+(highlightMe?' me':''); div.textContent=msg; logEl.prepend(div); toast(msg); }
@@ -736,7 +922,7 @@ window.__TYCOON_V23_READY__=true;
 
     // ---- 擲骰與移動（逐格動畫） ----
     function rollDice(){ var d1=1+Math.floor(Math.random()*6), d2=1+Math.floor(Math.random()*6); state.dice=[d1,d2]; $('#dice1').textContent=d1; $('#dice2').textContent=d2; return [d1,d2]; }
-    async function onRoll(){ var p=state.players[state.cur]; if (p.inJail) return {again:false}; $('#btnRoll').disabled=true; var d=rollDice(), d1=d[0], d2=d[1]; var isDouble=d1===d2; if (isDouble){ state.doublesInRow++; if (state.doublesInRow>=3){ log('⚠️ '+p.name+' 連續第三次擲出雙骰，被送入獄。', !p.isAI); goToJail(p); $('#btnEnd').disabled=false; return {again:false}; } } else { state.doublesInRow=0; } await moveSteps(p, d1+d2); await resolveTile(p, d1+d2); if (isDouble && p.alive && !p.inJail){ $('#turnInfo').textContent='雙骰！你可再擲一次。'; $('#btnRoll').disabled=false; $('#btnEnd').disabled=true; return {again:true}; } else { $('#btnEnd').disabled=false; return {again:false}; } }
+    async function onRoll(){ try{playSound("roll");}catch(e){}  var p=state.players[state.cur]; if (p.inJail) return {again:false}; $('#btnRoll').disabled=true; var d=rollDice(), d1=d[0], d2=d[1]; var isDouble=d1===d2; if (isDouble){ state.doublesInRow++; if (state.doublesInRow>=3){ log('⚠️ '+p.name+' 連續第三次擲出雙骰，被送入獄。', !p.isAI); goToJail(p); $('#btnEnd').disabled=false; return {again:false}; } } else { state.doublesInRow=0; } await moveSteps(p, d1+d2); await resolveTile(p, d1+d2); if (isDouble && p.alive && !p.inJail){ $('#turnInfo').textContent='雙骰！你可再擲一次。'; $('#btnRoll').disabled=false; $('#btnEnd').disabled=true; return {again:true}; } else { $('#btnEnd').disabled=false; return {again:false}; } }
     async function moveSteps(p, steps){ 
       var playerIdx = state.players.indexOf(p);
       return new Promise(function(resolve) {
@@ -1119,7 +1305,8 @@ window.__TYCOON_V23_READY__=true;
     document.getElementById('btnEnd').addEventListener('click', endTurn);
     document.getElementById('btnBuy').addEventListener('click', function(){ if (!state.awaitingBuy) return; var p=state.players[state.cur]; var t=tiles[p.pos]; var price=(t.type==="PROPERTY")?t.price:(t.type==="STATION"?200:150); buyProperty(p, t.idx, price); state.awaitingBuy=false; $('#btnBuy').disabled=true; $('#btnSkip').disabled=true; $('#btnEnd').disabled=false; });
     document.getElementById('btnSkip').addEventListener('click', function(){ state.awaitingBuy=false; $('#btnBuy').disabled=true; $('#btnSkip').disabled=true; $('#btnEnd').disabled=false; });
-    document.getElementById('btnReset').addEventListener('click', function(){ if (confirm('確定要重新開始？')){ initPlayers(); buildBoard(); renderTokens(); $('#btnRoll').disabled=false; $('#btnEnd').disabled=true; $('#btnBuy').disabled=true; $('#btnSkip').disabled=true; $('#dice1').textContent='-'; $('#dice2').textContent='-'; $('#turnInfo').textContent=''; $('#log').innerHTML=''; } });
+    document.getElementById('btnReset').addEventListener('click', function(){ if (confirm('確定要重新開始？')){ initPlayers();
+    setTimeout(addButtonSounds, 500); buildBoard(); renderTokens(); $('#btnRoll').disabled=false; $('#btnEnd').disabled=true; $('#btnBuy').disabled=true; $('#btnSkip').disabled=true; $('#dice1').textContent='-'; $('#dice2').textContent='-'; $('#turnInfo').textContent=''; $('#log').innerHTML=''; } });
     document.getElementById('btnAssets').addEventListener('click', showAssets);
     document.getElementById('btnCloseAssets').addEventListener('click', function(){ document.getElementById('assetsPanel').classList.add('hidden'); });
 
@@ -1130,6 +1317,7 @@ window.__TYCOON_V23_READY__=true;
 
     // 起始
     initPlayers();
+    setTimeout(addButtonSounds, 500);
     buildBoard();
     renderTokens();
     document.getElementById('btnEnd').disabled = true;
