@@ -1811,7 +1811,8 @@ var MAPS = {
       Object.keys(tokensByCell).forEach(function(posKey){
         var tokens = tokensByCell[posKey];
         var pos = idxToCoord(Number(posKey));
-        var cell = document.querySelector('#board > .tile[style*="grid-area: '+(pos.r+1)+' / '+(pos.c+1)+'"]');
+        var tileIdx = Number(posKey);
+        var cell = document.querySelector('.tile[data-tile-idx="'+tileIdx+'"]');
         if (!cell) return;
         
         // 創建棋子容器
