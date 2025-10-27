@@ -685,32 +685,58 @@ body::before {
   color: #667eea;
 }
 
-/* 骰子3D效果 */
-.dice {
-  border: 3px solid #FFD700;
-  border-radius: 10px;
+/* 3D骰子容器 */
+.dice-container {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  perspective: 1000px;
+}
+
+/* 3D骰子 */
+.die {
+  width: 80px;
+  height: 80px;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.6s;
+  font-size: 40px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #333;
   background: linear-gradient(145deg, #ffffff, #f0f0f0);
-  box-shadow: 
-    0 6px 20px rgba(0, 0, 0, 0.2),
-    inset 0 2px 4px rgba(255, 255, 255, 0.8);
-  color: #667eea;
-  transition: all 0.3s ease;
+  border-radius: 12px;
+  border: 4px solid #FFD700;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
-.dice:hover {
-  transform: rotateX(10deg) rotateY(10deg);
+/* 骰子滾動動畫 */
+.die.rolling {
+  animation: dice3DRoll 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-.dice.rolling {
-  animation: diceRoll 0.5s ease-in-out;
-}
-
-@keyframes diceRoll {
-  0% { transform: rotate(0deg) scale(1); }
-  25% { transform: rotate(90deg) scale(1.1); }
-  50% { transform: rotate(180deg) scale(1.2); }
-  75% { transform: rotate(270deg) scale(1.1); }
-  100% { transform: rotate(360deg) scale(1); }
+@keyframes dice3DRoll {
+  0% { 
+    transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1);
+  }
+  20% { 
+    transform: rotateX(360deg) rotateY(180deg) rotateZ(180deg) scale(1.3);
+  }
+  40% { 
+    transform: rotateX(720deg) rotateY(360deg) rotateZ(360deg) scale(1.5);
+  }
+  60% { 
+    transform: rotateX(1080deg) rotateY(540deg) rotateZ(540deg) scale(1.4);
+  }
+  80% { 
+    transform: rotateX(1440deg) rotateY(720deg) rotateZ(720deg) scale(1.2);
+  }
+  100% { 
+    transform: rotateX(1800deg) rotateY(900deg) rotateZ(900deg) scale(1);
+  }
 }
 
 /* 按鈕美化 */
@@ -905,7 +931,6 @@ button:active {
     <div class="center-panel" id="centerPanel">
         <div class="panel-header">
           <h1>🎲 大富翁</h1>
-          <button class="panel-toggle" id="panelToggle">收起</button>
         </div>
         
         <div class="panel-content" id="panelContent">
@@ -1386,6 +1411,376 @@ var MAPS = {
           {idx:12, name:"太陽能電網"},
           {idx:28, name:"氮氣採集站"}
         ]
+      },
+      philippines: {
+        name: "菲律賓",
+        properties: [
+          {idx:1, name:"馬尼拉灣", price:2000, group:"brown"},
+          {idx:3, name:"黎剎公園", price:2000, group:"brown"},
+          {idx:6, name:"長灘島", price:3300, group:"lightblue"},
+          {idx:8, name:"巧克力山", price:3300, group:"lightblue"},
+          {idx:9, name:"薄荷島", price:4000, group:"lightblue"},
+          {idx:11, name:"宿霧", price:4600, group:"pink"},
+          {idx:13, name:"麥哲倫十字架", price:4600, group:"pink"},
+          {idx:14, name:"聖嬰教堂", price:5300, group:"pink"},
+          {idx:16, name:"碧瑤", price:6000, group:"orange"},
+          {idx:18, name:"巴拿威梯田", price:6000, group:"orange"},
+          {idx:19, name:"馬榮火山", price:6600, group:"orange"},
+          {idx:21, name:"科隆島", price:7300, group:"red"},
+          {idx:23, name:"愛妮島", price:7300, group:"red"},
+          {idx:24, name:"公主港地下河", price:8000, group:"red"},
+          {idx:26, name:"薄荷島眼鏡猴", price:8600, group:"yellow"},
+          {idx:27, name:"杜馬蓋地", price:8600, group:"yellow"},
+          {idx:29, name:"錫基霍爾島", price:9300, group:"yellow"},
+          {idx:31, name:"維甘古城", price:10000, group:"green"},
+          {idx:32, name:"伊富高", price:10000, group:"green"},
+          {idx:34, name:"塔阿爾火山", price:10600, group:"green"},
+          {idx:37, name:"馬尼拉大教堂", price:11600, group:"darkblue"},
+          {idx:39, name:"SM亞洲購物中心", price:13200, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"馬尼拉站"},
+          {idx:15, name:"宿霧站"},
+          {idx:25, name:"達沃站"},
+          {idx:35, name:"碧瑤站"}
+        ],
+        utilities: [
+          {idx:12, name:"馬尼拉電力"},
+          {idx:28, name:"菲律賓水務"}
+        ]
+      },
+      thailand: {
+        name: "泰國",
+        properties: [
+          {idx:1, name:"考山路", price:2000, group:"brown"},
+          {idx:3, name:"臥佛寺", price:2000, group:"brown"},
+          {idx:6, name:"大皇宮", price:3300, group:"lightblue"},
+          {idx:8, name:"玉佛寺", price:3300, group:"lightblue"},
+          {idx:9, name:"鄭王廟", price:4000, group:"lightblue"},
+          {idx:11, name:"暹羅廣場", price:4600, group:"pink"},
+          {idx:13, name:"四面佛", price:4600, group:"pink"},
+          {idx:14, name:"曼谷河濱夜市", price:5300, group:"pink"},
+          {idx:16, name:"普吉島", price:6000, group:"orange"},
+          {idx:18, name:"芭東海灘", price:6000, group:"orange"},
+          {idx:19, name:"攀牙灣", price:6600, group:"orange"},
+          {idx:21, name:"清邁古城", price:7300, group:"red"},
+          {idx:23, name:"素帖寺", price:7300, group:"red"},
+          {idx:24, name:"清萊白廟", price:8000, group:"red"},
+          {idx:26, name:"芭達雅", price:8600, group:"yellow"},
+          {idx:27, name:"珊瑚島", price:8600, group:"yellow"},
+          {idx:29, name:"真理寺", price:9300, group:"yellow"},
+          {idx:31, name:"水上市場", price:10000, group:"green"},
+          {idx:32, name:"美功鐵道市場", price:10000, group:"green"},
+          {idx:34, name:"桂河大橋", price:10600, group:"green"},
+          {idx:37, name:"蘇美島", price:11600, group:"darkblue"},
+          {idx:39, name:"喀比", price:13200, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"曼谷站"},
+          {idx:15, name:"清邁站"},
+          {idx:25, name:"普吉站"},
+          {idx:35, name:"芭達雅站"}
+        ],
+        utilities: [
+          {idx:12, name:"泰國電力局"},
+          {idx:28, name:"曼谷水務"}
+        ]
+      },
+      singapore: {
+        name: "新加坡",
+        properties: [
+          {idx:1, name:"牛車水", price:2000, group:"brown"},
+          {idx:3, name:"小印度", price:2000, group:"brown"},
+          {idx:6, name:"魚尾獅公園", price:3300, group:"lightblue"},
+          {idx:8, name:"濱海灣花園", price:3300, group:"lightblue"},
+          {idx:9, name:"超級樹", price:4000, group:"lightblue"},
+          {idx:11, name:"濱海灣金沙", price:4600, group:"pink"},
+          {idx:13, name:"金沙空中花園", price:4600, group:"pink"},
+          {idx:14, name:"藝術科學博物館", price:5300, group:"pink"},
+          {idx:16, name:"聖淘沙", price:6000, group:"orange"},
+          {idx:18, name:"環球影城", price:6000, group:"orange"},
+          {idx:19, name:"S.E.A.海洋館", price:6600, group:"orange"},
+          {idx:21, name:"烏節路", price:7300, group:"red"},
+          {idx:23, name:"ION購物中心", price:7300, group:"red"},
+          {idx:24, name:"義安城", price:8000, group:"red"},
+          {idx:26, name:"克拉碼頭", price:8600, group:"yellow"},
+          {idx:27, name:"駁船碼頭", price:8600, group:"yellow"},
+          {idx:29, name:"萊佛士酒店", price:9300, group:"yellow"},
+          {idx:31, name:"夜間動物園", price:10000, group:"green"},
+          {idx:32, name:"新加坡動物園", price:10000, group:"green"},
+          {idx:34, name:"河川生態園", price:10600, group:"green"},
+          {idx:37, name:"濱海藝術中心", price:11600, group:"darkblue"},
+          {idx:39, name:"新加坡摩天輪", price:13200, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"市政廳站"},
+          {idx:15, name:"烏節站"},
+          {idx:25, name:"濱海灣站"},
+          {idx:35, name:"樟宜機場站"}
+        ],
+        utilities: [
+          {idx:12, name:"新能源集團"},
+          {idx:28, name:"公用事業局"}
+        ]
+      },
+      malaysia: {
+        name: "馬來西亞",
+        properties: [
+          {idx:1, name:"獨立廣場", price:2000, group:"brown"},
+          {idx:3, name:"茨廠街", price:2000, group:"brown"},
+          {idx:6, name:"雙子塔", price:3300, group:"lightblue"},
+          {idx:8, name:"吉隆坡塔", price:3300, group:"lightblue"},
+          {idx:9, name:"黑風洞", price:4000, group:"lightblue"},
+          {idx:11, name:"武吉免登", price:4600, group:"pink"},
+          {idx:13, name:"阿羅街", price:4600, group:"pink"},
+          {idx:14, name:"中央藝術坊", price:5300, group:"pink"},
+          {idx:16, name:"檳城喬治市", price:6000, group:"orange"},
+          {idx:18, name:"檳城極樂寺", price:6000, group:"orange"},
+          {idx:19, name:"升旗山", price:6600, group:"orange"},
+          {idx:21, name:"馬六甲", price:7300, group:"red"},
+          {idx:23, name:"紅屋", price:7300, group:"red"},
+          {idx:24, name:"雞場街", price:8000, group:"red"},
+          {idx:26, name:"蘭卡威", price:8600, group:"yellow"},
+          {idx:27, name:"天空之橋", price:8600, group:"yellow"},
+          {idx:29, name:"巨鷹廣場", price:9300, group:"yellow"},
+          {idx:31, name:"雲頂高原", price:10000, group:"green"},
+          {idx:32, name:"金馬崙高原", price:10000, group:"green"},
+          {idx:34, name:"沙巴神山", price:10600, group:"green"},
+          {idx:37, name:"沙巴仙本那", price:11600, group:"darkblue"},
+          {idx:39, name:"砂拉越姆魯洞穴", price:13200, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"吉隆坡中央站"},
+          {idx:15, name:"檳城站"},
+          {idx:25, name:"新山站"},
+          {idx:35, name:"怡保站"}
+        ],
+        utilities: [
+          {idx:12, name:"國家能源"},
+          {idx:28, name:"雪蘭莪水務"}
+        ]
+      },
+      indonesia: {
+        name: "印尼",
+        properties: [
+          {idx:1, name:"獨立廣場", price:2000, group:"brown"},
+          {idx:3, name:"國家紀念碑", price:2000, group:"brown"},
+          {idx:6, name:"峇里島", price:3300, group:"lightblue"},
+          {idx:8, name:"烏布梯田", price:3300, group:"lightblue"},
+          {idx:9, name:"海神廟", price:4000, group:"lightblue"},
+          {idx:11, name:"庫塔海灘", price:4600, group:"pink"},
+          {idx:13, name:"金巴蘭海灘", price:4600, group:"pink"},
+          {idx:14, name:"烏魯瓦圖廟", price:5300, group:"pink"},
+          {idx:16, name:"婆羅浮屠", price:6000, group:"orange"},
+          {idx:18, name:"普蘭巴南", price:6000, group:"orange"},
+          {idx:19, name:"日惹蘇丹王宮", price:6600, group:"orange"},
+          {idx:21, name:"龍目島", price:7300, group:"red"},
+          {idx:23, name:"吉利群島", price:7300, group:"red"},
+          {idx:24, name:"林賈尼火山", price:8000, group:"red"},
+          {idx:26, name:"科莫多島", price:8600, group:"yellow"},
+          {idx:27, name:"科莫多龍", price:8600, group:"yellow"},
+          {idx:29, name:"粉紅沙灘", price:9300, group:"yellow"},
+          {idx:31, name:"布羅莫火山", price:10000, group:"green"},
+          {idx:32, name:"伊真火山", price:10000, group:"green"},
+          {idx:34, name:"多巴湖", price:10600, group:"green"},
+          {idx:37, name:"雅加達老城", price:11600, group:"darkblue"},
+          {idx:39, name:"千島群島", price:13200, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"雅加達站"},
+          {idx:15, name:"日惹站"},
+          {idx:25, name:"泗水站"},
+          {idx:35, name:"萬隆站"}
+        ],
+        utilities: [
+          {idx:12, name:"印尼國家電力"},
+          {idx:28, name:"雅加達水務"}
+        ]
+      },
+      australia: {
+        name: "澳洲",
+        properties: [
+          {idx:1, name:"環形碼頭", price:2000, group:"brown"},
+          {idx:3, name:"岩石區", price:2000, group:"brown"},
+          {idx:6, name:"雪梨歌劇院", price:3300, group:"lightblue"},
+          {idx:8, name:"雪梨港灣大橋", price:3300, group:"lightblue"},
+          {idx:9, name:"邦迪海灘", price:4000, group:"lightblue"},
+          {idx:11, name:"達令港", price:4600, group:"pink"},
+          {idx:13, name:"雪梨塔", price:4600, group:"pink"},
+          {idx:14, name:"皇家植物園", price:5300, group:"pink"},
+          {idx:16, name:"大堡礁", price:6000, group:"orange"},
+          {idx:18, name:"聖靈群島", price:6000, group:"orange"},
+          {idx:19, name:"白天堂海灘", price:6600, group:"orange"},
+          {idx:21, name:"艾爾斯岩", price:7300, group:"red"},
+          {idx:23, name:"卡塔丘塔", price:7300, group:"red"},
+          {idx:24, name:"國王峽谷", price:8000, group:"red"},
+          {idx:26, name:"墨爾本", price:8600, group:"yellow"},
+          {idx:27, name:"大洋路", price:8600, group:"yellow"},
+          {idx:29, name:"十二門徒岩", price:9300, group:"yellow"},
+          {idx:31, name:"黃金海岸", price:10000, group:"green"},
+          {idx:32, name:"衝浪者天堂", price:10000, group:"green"},
+          {idx:34, name:"夢幻世界", price:10600, group:"green"},
+          {idx:37, name:"塔斯馬尼亞", price:11600, group:"darkblue"},
+          {idx:39, name:"搖籃山", price:13200, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"中央車站"},
+          {idx:15, name:"墨爾本站"},
+          {idx:25, name:"布里斯本站"},
+          {idx:35, name:"伯斯站"}
+        ],
+        utilities: [
+          {idx:12, name:"澳洲能源"},
+          {idx:28, name:"雪梨水務"}
+        ]
+      },
+      india: {
+        name: "印度",
+        properties: [
+          {idx:1, name:"紅堡", price:2000, group:"brown"},
+          {idx:3, name:"賈瑪清真寺", price:2000, group:"brown"},
+          {idx:6, name:"泰姬瑪哈陵", price:3300, group:"lightblue"},
+          {idx:8, name:"阿格拉堡", price:3300, group:"lightblue"},
+          {idx:9, name:"法特普爾西格里", price:4000, group:"lightblue"},
+          {idx:11, name:"印度門", price:4600, group:"pink"},
+          {idx:13, name:"蓮花寺", price:4600, group:"pink"},
+          {idx:14, name:"顧特卜塔", price:5300, group:"pink"},
+          {idx:16, name:"恆河", price:6000, group:"orange"},
+          {idx:18, name:"瓦拉納西", price:6000, group:"orange"},
+          {idx:19, name:"鹿野苑", price:6600, group:"orange"},
+          {idx:21, name:"齋浦爾城市宮殿", price:7300, group:"red"},
+          {idx:23, name:"風之宮殿", price:7300, group:"red"},
+          {idx:24, name:"琥珀堡", price:8000, group:"red"},
+          {idx:26, name:"果阿海灘", price:8600, group:"yellow"},
+          {idx:27, name:"舊果阿教堂", price:8600, group:"yellow"},
+          {idx:29, name:"阿蘭波爾海灘", price:9300, group:"yellow"},
+          {idx:31, name:"孟買印度門", price:10000, group:"green"},
+          {idx:32, name:"象島石窟", price:10000, group:"green"},
+          {idx:34, name:"寶萊塢", price:10600, group:"green"},
+          {idx:37, name:"克久拉霍", price:11600, group:"darkblue"},
+          {idx:39, name:"埃洛拉石窟", price:13200, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"新德里站"},
+          {idx:15, name:"孟買站"},
+          {idx:25, name:"加爾各答站"},
+          {idx:35, name:"欽奈站"}
+        ],
+        utilities: [
+          {idx:12, name:"印度電力"},
+          {idx:28, name:"德里水務"}
+        ]
+      },
+      uae: {
+        name: "阿聯酋",
+        properties: [
+          {idx:1, name:"杜拜購物中心", price:2000, group:"brown"},
+          {idx:3, name:"黃金市集", price:2000, group:"brown"},
+          {idx:6, name:"哈里發塔", price:3300, group:"lightblue"},
+          {idx:8, name:"杜拜噴泉", price:3300, group:"lightblue"},
+          {idx:9, name:"杜拜水族館", price:4000, group:"lightblue"},
+          {idx:11, name:"帆船酒店", price:4600, group:"pink"},
+          {idx:13, name:"朱美拉海灘", price:4600, group:"pink"},
+          {idx:14, name:"瘋狂維迪水上樂園", price:5300, group:"pink"},
+          {idx:16, name:"棕櫚島", price:6000, group:"orange"},
+          {idx:18, name:"亞特蘭提斯酒店", price:6000, group:"orange"},
+          {idx:19, name:"失落的空間水族館", price:6600, group:"orange"},
+          {idx:21, name:"杜拜奇蹟花園", price:7300, group:"red"},
+          {idx:23, name:"全球村", price:7300, group:"red"},
+          {idx:24, name:"IMG冒險世界", price:8000, group:"red"},
+          {idx:26, name:"杜拜相框", price:8600, group:"yellow"},
+          {idx:27, name:"杜拜河", price:8600, group:"yellow"},
+          {idx:29, name:"阿法迪歷史區", price:9300, group:"yellow"},
+          {idx:31, name:"阿布達比大清真寺", price:10000, group:"green"},
+          {idx:32, name:"法拉利世界", price:10000, group:"green"},
+          {idx:34, name:"盧浮宮阿布達比", price:10600, group:"green"},
+          {idx:37, name:"阿布達比皇宮酒店", price:11600, group:"darkblue"},
+          {idx:39, name:"亞斯島", price:13200, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"杜拜地鐵紅線站"},
+          {idx:15, name:"阿布達比站"},
+          {idx:25, name:"沙迦站"},
+          {idx:35, name:"艾因站"}
+        ],
+        utilities: [
+          {idx:12, name:"杜拜電力水務局"},
+          {idx:28, name:"阿布達比水電局"}
+        ]
+      },
+      uk: {
+        name: "英國",
+        properties: [
+          {idx:1, name:"倫敦塔", price:2000, group:"brown"},
+          {idx:3, name:"塔橋", price:2000, group:"brown"},
+          {idx:6, name:"大笨鐘", price:3300, group:"lightblue"},
+          {idx:8, name:"西敏寺", price:3300, group:"lightblue"},
+          {idx:9, name:"國會大廈", price:4000, group:"lightblue"},
+          {idx:11, name:"白金漢宮", price:4600, group:"pink"},
+          {idx:13, name:"倫敦眼", price:4600, group:"pink"},
+          {idx:14, name:"特拉法加廣場", price:5300, group:"pink"},
+          {idx:16, name:"大英博物館", price:6000, group:"orange"},
+          {idx:18, name:"國家美術館", price:6000, group:"orange"},
+          {idx:19, name:"泰特現代美術館", price:6600, group:"orange"},
+          {idx:21, name:"劍橋大學", price:7300, group:"red"},
+          {idx:23, name:"牛津大學", price:7300, group:"red"},
+          {idx:24, name:"巴斯羅馬浴場", price:8000, group:"red"},
+          {idx:26, name:"巨石陣", price:8600, group:"yellow"},
+          {idx:27, name:"溫莎城堡", price:8600, group:"yellow"},
+          {idx:29, name:"史特拉福", price:9300, group:"yellow"},
+          {idx:31, name:"愛丁堡城堡", price:10000, group:"green"},
+          {idx:32, name:"皇家一英里", price:10000, group:"green"},
+          {idx:34, name:"荷里路德宮", price:10600, group:"green"},
+          {idx:37, name:"湖區", price:11600, group:"darkblue"},
+          {idx:39, name:"約克大教堂", price:13200, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"國王十字站"},
+          {idx:15, name:"帕丁頓站"},
+          {idx:25, name:"維多利亞站"},
+          {idx:35, name:"滑鐵盧站"}
+        ],
+        utilities: [
+          {idx:12, name:"英國電網"},
+          {idx:28, name:"泰晤士水務"}
+        ]
+      },
+      brazil: {
+        name: "巴西",
+        properties: [
+          {idx:1, name:"科帕卡瓦納海灘", price:2000, group:"brown"},
+          {idx:3, name:"伊帕內瑪海灘", price:2000, group:"brown"},
+          {idx:6, name:"基督像", price:3300, group:"lightblue"},
+          {idx:8, name:"科科瓦多山", price:3300, group:"lightblue"},
+          {idx:9, name:"麵包山", price:4000, group:"lightblue"},
+          {idx:11, name:"馬拉卡納體育場", price:4600, group:"pink"},
+          {idx:13, name:"塞勒隆階梯", price:4600, group:"pink"},
+          {idx:14, name:"里約大教堂", price:5300, group:"pink"},
+          {idx:16, name:"伊瓜蘇瀑布", price:6000, group:"orange"},
+          {idx:18, name:"伊瓜蘇國家公園", price:6000, group:"orange"},
+          {idx:19, name:"三國交界", price:6600, group:"orange"},
+          {idx:21, name:"亞馬遜雨林", price:7300, group:"red"},
+          {idx:23, name:"瑪瑙斯歌劇院", price:7300, group:"red"},
+          {idx:24, name:"黑河與白河交匯", price:8000, group:"red"},
+          {idx:26, name:"聖保羅大教堂", price:8600, group:"yellow"},
+          {idx:27, name:"保利斯塔大道", price:8600, group:"yellow"},
+          {idx:29, name:"伊比拉布埃拉公園", price:9300, group:"yellow"},
+          {idx:31, name:"薩爾瓦多佩洛尼奧", price:10000, group:"green"},
+          {idx:32, name:"巴西利亞大教堂", price:10000, group:"green"},
+          {idx:34, name:"三權廣場", price:10600, group:"green"},
+          {idx:37, name:"費爾南多迪諾羅尼亞", price:11600, group:"darkblue"},
+          {idx:39, name:"潘塔納爾濕地", price:13200, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"里約中央站"},
+          {idx:15, name:"聖保羅站"},
+          {idx:25, name:"巴西利亞站"},
+          {idx:35, name:"薩爾瓦多站"}
+        ],
+        utilities: [
+          {idx:12, name:"巴西電力"},
+          {idx:28, name:"里約水務"}
+        ]
       }
     };
     
@@ -1814,55 +2209,81 @@ var MAPS = {
         var cell = document.querySelector('.tile[data-tile-idx="'+tileIdx+'"]');
         if (!cell) return;
         
-        // 創建棋子容器
+        // 創建棋子容器（使用 grid 佈局）
         var container = document.createElement('div');
         container.className = 'token-container';
-        container.style.cssText = 'position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 2px; flex-wrap: wrap; padding: 2px; z-index: 250 !important;';
+        var totalPlayers = state.players.length;
         
-        tokens.forEach(function(t){
-          var tok = document.createElement('div'); 
-          tok.className = 'token'; 
-          tok.style.background = t.player.color; 
-          tok.setAttribute('data-p', String(t.idx)); 
-          tok.textContent = t.player.name;
+        // 根據玩家數量設定 grid 佈局
+        if (totalPlayers === 2) {
+          // 2人：上下分割
+          container.style.cssText = 'position: absolute; inset: 0; display: grid; grid-template-rows: 1fr 1fr; padding: 0; gap: 0; z-index: 250 !important; overflow: hidden;';
+        } else if (totalPlayers === 3) {
+          // 3人：三等份（上中下）
+          container.style.cssText = 'position: absolute; inset: 0; display: grid; grid-template-rows: 1fr 1fr 1fr; padding: 0; gap: 0; z-index: 250 !important; overflow: hidden;';
+        } else {
+          // 4人：2×2 網格
+          container.style.cssText = 'position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; padding: 0; gap: 0; z-index: 250 !important; overflow: hidden;';
+        }
+        
+        // 創建所有玩家的棋子位置（即使不在這個格子也預留位置）
+        for (var pi = 0; pi < totalPlayers; pi++) {
+          var slot = document.createElement('div');
+          slot.style.cssText = 'display: flex; align-items: center; justify-content: center; overflow: visible; position: relative; width: 100%; height: 100%;';
           
-          // 不同玩家使用不同形狀和動畫
-          if (t.idx === 0) {
-            // 玩家 1: 圓形 - 旋轉脈衝
-            tok.style.borderRadius = '50%';
-            tok.style.animation = 'player1Pulse 3s ease-in-out infinite';
-          } else if (t.idx === 1) {
-            // 玩家 2: 方形 - 翻轉
-            tok.style.borderRadius = '6px';
-            tok.style.animation = 'player2Flip 4s ease-in-out infinite';
-            tok.style.transformStyle = 'preserve-3d';
-          } else if (t.idx === 2) {
-            // 玩家 3: 三角形 - 彈跳
-            tok.style.borderRadius = '0';
-            tok.style.clipPath = 'polygon(50% 0%, 0% 100%, 100% 100%)';
-            tok.style.animation = 'player3Bounce 2s ease-in-out infinite';
-          } else if (t.idx === 3) {
-            // 玩家 4: 菱形 - 搖擺
-            tok.style.borderRadius = '0';
-            tok.style.animation = 'player4Swing 3s ease-in-out infinite';
-            var inner = document.createElement('span');
-            inner.textContent = tok.textContent;
-            inner.style.transform = 'rotate(-45deg)';
-            inner.style.display = 'inline-block';
-            tok.textContent = '';
-            tok.appendChild(inner);
+          // 檢查這個玩家是否在這個格子
+          var tokenData = tokens.find(function(t){ return t.idx === pi; });
+          
+          if (tokenData) {
+            var tok = document.createElement('div'); 
+            tok.className = 'token'; 
+            tok.style.background = tokenData.player.color; 
+            tok.setAttribute('data-p', String(tokenData.idx)); 
+            tok.textContent = tokenData.player.name;
+            
+            // 根據玩家數量調整棋子大小（使用固定像素值）
+            var tokenSize = totalPlayers === 2 ? '22px' : (totalPlayers === 3 ? '18px' : '16px');
+            tok.style.width = tokenSize;
+            tok.style.height = tokenSize;
+            tok.style.minWidth = tokenSize;
+            tok.style.minHeight = tokenSize;
+            tok.style.maxWidth = tokenSize;
+            tok.style.maxHeight = tokenSize;
+            tok.style.fontSize = totalPlayers === 2 ? '8px' : (totalPlayers === 3 ? '7px' : '6px');
+            // 覆蓋 position 樣式，使用 relative 以便在 flex 容器中居中
+            tok.style.position = 'relative';
+            tok.style.bottom = 'auto';
+            tok.style.left = 'auto';
+            tok.style.transform = 'none';
+            
+            // 不同玩家使用不同形狀和動畫
+            if (tokenData.idx === 0) {
+              tok.style.borderRadius = '50%';
+              tok.style.animation = 'player1Pulse 3s ease-in-out infinite';
+            } else if (tokenData.idx === 1) {
+              tok.style.borderRadius = '6px';
+              tok.style.animation = 'player2Flip 4s ease-in-out infinite';
+              tok.style.transformStyle = 'preserve-3d';
+            } else if (tokenData.idx === 2) {
+              tok.style.borderRadius = '0';
+              tok.style.clipPath = 'polygon(50% 0%, 0% 100%, 100% 100%)';
+              tok.style.animation = 'player3Bounce 2s ease-in-out infinite';
+            } else if (tokenData.idx === 3) {
+              tok.style.borderRadius = '0';
+              tok.style.animation = 'player4Swing 3s ease-in-out infinite';
+              var inner = document.createElement('span');
+              inner.textContent = tok.textContent;
+              inner.style.transform = 'rotate(-45deg)';
+              inner.style.display = 'inline-block';
+              tok.textContent = '';
+              tok.appendChild(inner);
+            }
+            
+            slot.appendChild(tok);
           }
           
-          // 多個棋子時縮小
-          if (tokens.length > 1) {
-            var size = tokens.length === 2 ? '28px' : (tokens.length === 3 ? '24px' : '20px');
-            tok.style.width = size;
-            tok.style.height = size;
-            tok.style.fontSize = tokens.length === 2 ? '12px' : (tokens.length === 3 ? '10px' : '9px');
-          }
-          
-          container.appendChild(tok);
-        });
+          container.appendChild(slot);
+        }
         
         cell.appendChild(container);
       });
@@ -1870,20 +2291,8 @@ var MAPS = {
     
     // 棋子移動動畫
     function animateTokenMove(playerIdx, steps, callback) {
-      // 縮小面板
-      var panel = document.querySelector('.center-panel');
-      if (panel && !panel.classList.contains('collapsed')) {
-        panel.classList.add('minimized');
-      }
-      
       function moveStep(remainingSteps) {
-        if (remainingSteps <= 0) {
-          // 恢復面板
-          setTimeout(function() {
-            if (panel) panel.classList.remove('minimized');
-            // 移除所有棋子的 moving class
-            $$('.token').forEach(function(tok){ tok.classList.remove('moving'); });
-          }, 300);
+        if (remainingSteps === 0) {
           if (callback) callback();
           return;
         }
@@ -2061,15 +2470,25 @@ var MAPS = {
       html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;">';
       
       var mapList = [
-        {key: 'taiwan', name: '🇹🇼 台灣', desc: '寶島風光'},
-        {key: 'japan', name: '🇯🇵 日本', desc: '櫻花之國'},
-        {key: 'usa', name: '🇺🇸 美國', desc: '自由之地'},
+        {key: 'taiwan', name: '🇼🇳 台灣', desc: '寶島風光'},
+        {key: 'philippines', name: '🇵🇭 菲律賓', desc: '千島之國'},
         {key: 'hongkong', name: '🇭🇰 香港', desc: '東方之珠'},
         {key: 'vietnam', name: '🇻🇳 越南', desc: '南洋風情'},
+        {key: 'thailand', name: '🇹🇭 泰國', desc: '微笑之國'},
+        {key: 'japan', name: '🇯🇵 日本', desc: '櫻花之國'},
         {key: 'korea', name: '🇰🇷 韓國', desc: '漢江奇蹟'},
+        {key: 'singapore', name: '🇸🇬 新加坡', desc: '獅城花園'},
+        {key: 'malaysia', name: '🇲🇾 馬來西亞', desc: '雙塔之國'},
+        {key: 'indonesia', name: '🇮🇩 印尼', desc: '萬島之國'},
+        {key: 'australia', name: '🇦🇺 澳洲', desc: '袋鼠之國'},
+        {key: 'india', name: '🇮🇳 印度', desc: '泰姬之國'},
+        {key: 'uae', name: '🇦🇪 阿聯酋', desc: '沙漠奇蹟'},
+        {key: 'russia', name: '🇷🇺 俄羅斯', desc: '廣闊大地'},
+        {key: 'uk', name: '🇬🇧 英國', desc: '日不落帝國'},
         {key: 'italy', name: '🇮🇹 義大利', desc: '文藝復興'},
         {key: 'netherlands', name: '🇳🇱 荷蘭', desc: '風車之國'},
-        {key: 'russia', name: '🇷🇺 俄羅斯', desc: '廣闊大地'},
+        {key: 'usa', name: '🇺🇸 美國', desc: '自由之地'},
+        {key: 'brazil', name: '🇧🇷 巴西', desc: '森巴之國'},
         {key: 'galaxy', name: '🌌 銀河系', desc: '宇宙探索'}
       ];
       
@@ -2120,10 +2539,33 @@ var MAPS = {
     }
 
     // ---- 擲骰與移動（逐格動畫） ----
-    function rollDice(){ var d1=1+Math.floor(Math.random()*6), d2=1+Math.floor(Math.random()*6); state.dice=[d1,d2]; $('#dice1').textContent=d1; $('#dice2').textContent=d2; return [d1,d2]; }
-    async function onRoll(){ try{playSound("roll");}catch(e){}  var p=state.players[state.cur]; if (p.inJail) return {again:false}; $('#btnRoll').disabled=true; var d=rollDice(), d1=d[0], d2=d[1]; var isDouble=d1===d2; if (isDouble){ state.doublesInRow++; if (state.doublesInRow>=3){ log('⚠️ '+p.name+' 連續第三次擲出雙骰，被送入獄。', !p.isAI); goToJail(p); $('#btnEnd').disabled=false; return {again:false}; } } else { state.doublesInRow=0; } await moveSteps(p, d1+d2); await resolveTile(p, d1+d2); if (isDouble && p.alive && !p.inJail){ $('#turnInfo').textContent='雙骰！你可再擲一次。'; $('#btnRoll').disabled=false; $('#btnEnd').disabled=true; return {again:true}; } else { $('#btnEnd').disabled=false; return {again:false}; } }
+    function rollDice(){ 
+      // 添加3D動畫
+      var dice1El = $('#dice1');
+      var dice2El = $('#dice2');
+      dice1El.classList.add('rolling');
+      dice2El.classList.add('rolling');
+      
+      setTimeout(function(){
+        dice1El.classList.remove('rolling');
+        dice2El.classList.remove('rolling');
+      }, 1200);
+      
+      var d1=1+Math.floor(Math.random()*6), d2=1+Math.floor(Math.random()*6); 
+      state.dice=[d1,d2]; 
+      
+      // 延遲顯示結果，讓動畫更真實
+      setTimeout(function(){
+        dice1El.textContent=d1; 
+        dice2El.textContent=d2;
+      }, 600);
+      
+      return [d1,d2]; 
+    }
+    async function onRoll(){ try{playSound("roll");}catch(e){}  var p=state.players[state.cur]; if (p.inJail) return {again:false}; $('#btnRoll').disabled=true; var d=rollDice(), d1=d[0], d2=d[1]; var isDouble=d1===d2; if (isDouble){ state.doublesInRow++; if (state.doublesInRow>=3){ log('⚠️ '+p.name+' 連續第三次擲出雙骰，被送入獄。', !p.isAI); goToJail(p); $('#btnEnd').disabled=false; return {again:false}; } } else { state.doublesInRow=0; } await sleep(1200); await moveSteps(p, d1+d2); await resolveTile(p, d1+d2); if (isDouble && p.alive && !p.inJail){ $('#turnInfo').textContent='雙骰！你可再擲一次。'; $('#btnRoll').disabled=false; $('#btnEnd').disabled=true; return {again:true}; } else { $('#btnEnd').disabled=false; return {again:false}; } }
     async function moveSteps(p, steps){ 
       var playerIdx = state.players.indexOf(p);
+      try { playSound('move'); } catch(e) {}
       return new Promise(function(resolve) {
         animateTokenMove(playerIdx, steps, function() {
           // 檢查是否經過起點
@@ -2991,20 +3433,7 @@ var MAPS = {
 })();
   </script>
   <script>
-  // 面板折疊功能
-  (function(){
-    const panel = document.getElementById('centerPanel');
-    const toggle = document.getElementById('panelToggle');
-    const content = document.getElementById('panelContent');
-    
-    if (toggle && panel && content) {
-      toggle.addEventListener('click', function() {
-        panel.classList.toggle('collapsed');
-        content.classList.toggle('hidden');
-        toggle.textContent = panel.classList.contains('collapsed') ? '展開' : '收起';
-      });
-    }
-  })();
+  // 面板收起/展開功能已移除
   
   // 房屋等級顯示功能
   (function(){
