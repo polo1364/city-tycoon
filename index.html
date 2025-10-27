@@ -562,10 +562,10 @@ button.danger { background: #dc3545; color: #fff; border-color: #dc3545; }
 @media (max-width: 480px) {
   /* 手機版：與電腦版相同佈局，只縮小尺寸 */
   .center-panel {
-    width: 65%; /* 從 70% 縮小到 65% */
-    height: auto; /* 改為自動高度 */
-    max-height: 75%; /* 限制最大高度 */
-    padding: 8px; /* 縮小內邊距 */
+    width: 58%; /* 進一步縮小寬度 */
+    height: auto;
+    max-height: 70%; /* 降低最大高度 */
+    padding: 6px 4px; /* 減少左右內邊距 */
   }
   .center-panel.collapsed {
     width: auto;
@@ -584,15 +584,19 @@ button.danger { background: #dc3545; color: #fff; border-color: #dc3545; }
     gap: 4px; /* 縮小間距 */
   }
   .current-player-area, .players-area {
-    min-height: 100px; /* 手機版縮小高度 */
+    min-height: 80px; /* 進一步縮小高度 */
+    padding: 4px; /* 減少內邊距 */
+  }
+  .current-player-area h2, .players-area h2 {
+    margin-bottom: 2px; /* 減少標題下方間距 */
   }
   .dice-container {
-    gap: 4px; /* 縮小骰子間距 */
+    gap: 3px;
   }
   .die {
-    width: 40px !important;
-    height: 40px !important;
-    font-size: 18px !important;
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 14px !important;
   }
   .section h2 {
     font-size: 11px;
