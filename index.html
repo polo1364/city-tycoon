@@ -494,15 +494,19 @@ button.danger { background: #dc3545; color: #fff; border-color: #dc3545; }
 @media (max-width: 768px) {
   .center-panel {
     width: 85%;
-    height: 60%; /* 進一步減少高度 */
+    height: auto; /* 改為自動高度 */
+    max-height: 70%; /* 限制最大高度 */
     padding: 8px;
   }
   .panel-header h1 {
     font-size: 14px;
   }
   .top-section {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr; /* 並排顯示 */
     gap: 4px;
+  }
+  .current-player-area, .players-area {
+    min-height: 80px; /* 縮小最小高度 */
   }
   .controls-section {
     grid-template-columns: repeat(4, 1fr);
@@ -551,7 +555,18 @@ button.danger { background: #dc3545; color: #fff; border-color: #dc3545; }
   }
   .top-section {
     grid-template-columns: 1fr 1fr; /* 並排顯示 */
-    gap: 6px; /* 縮小間距 */
+    gap: 4px; /* 縮小間距 */
+  }
+  .current-player-area, .players-area {
+    min-height: 100px; /* 手機版縮小高度 */
+  }
+  .dice-container {
+    gap: 4px; /* 縮小骰子間距 */
+  }
+  .die {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 18px !important;
   }
   .section h2 {
     font-size: 11px;
