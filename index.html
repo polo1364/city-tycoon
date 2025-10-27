@@ -2467,7 +2467,8 @@ var MAPS = {
     function showMapSelection() {
       var html = '<h2>🗺️ 選擇地圖</h2>';
       html += '<p>請選擇你想遊玩的地圖：</p>';
-      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;">';
+      html += '<div style="max-height:400px;overflow-y:auto;padding-right:8px;margin-top:16px;">';
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">';
       
       var mapList = [
         {key: 'taiwan', name: '🇼🇳 台灣', desc: '寶島風光'},
@@ -2499,7 +2500,8 @@ var MAPS = {
         html += '</button>';
       });
       
-      html += '</div>';
+      html += '</div>'; // 關閉 grid
+      html += '</div>'; // 關閉滾動容器
       
       showModal(html, false);
       
