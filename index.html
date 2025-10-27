@@ -2884,9 +2884,19 @@ var MAPS = {
     document.getElementById('btnDebugTokens').addEventListener('click', function(){
       var tokens = document.querySelectorAll('.token');
       var containers = document.querySelectorAll('.token-container');
+      var tiles = document.querySelectorAll('.tile[data-tile-idx]');
       var debugInfo = '=== 棋子調試資訊 ===\n\n';
       debugInfo += '棋子數量: ' + tokens.length + '\n';
-      debugInfo += '容器數量: ' + containers.length + '\n\n';
+      debugInfo += '容器數量: ' + containers.length + '\n';
+      debugInfo += '格子數量: ' + tiles.length + '\n';
+      debugInfo += '玩家數量: ' + (state && state.players ? state.players.length : 0) + '\n';
+      if (state && state.players && state.players.length > 0) {
+        debugInfo += '第一個玩家位置: ' + state.players[0].pos + '\n';
+        debugInfo += '第一個玩家名稱: ' + state.players[0].name + '\n';
+        var testCell = document.querySelector('.tile[data-tile-idx="0"]');
+        debugInfo += '起點格子存在: ' + (testCell ? '是' : '否') + '\n';
+      }
+      debugInfo += '\n';
       
       if (tokens.length > 0) {
         var token = tokens[0];
@@ -2909,6 +2919,7 @@ var MAPS = {
         debugInfo += '是否在視窗內: ' + (rect.top >= 0 && rect.left >= 0 && rect.bottom <= window.innerHeight && rect.right <= window.innerWidth) + '\n';
       } else {
         debugInfo += '❗ 沒有找到任何棋子元素！\n';
+        debugInfo += '\n請檢查 renderTokens 是否被調用\n';
       }
       
       debugInfo += '\n視窗大小: ' + window.innerWidth + ' x ' + window.innerHeight;
