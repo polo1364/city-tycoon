@@ -512,111 +512,109 @@ button.danger { background: #dc3545; color: #fff; border-color: #dc3545; }
 }
 
 @media (max-width: 480px) {
+  /* 手機版：中央面板變小並簡化 */
   .center-panel {
-    /* 手機版：底部抽屜式設計 */
-    top: auto !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    transform: none !important;
-    width: 100% !important;
-    height: 40vh !important; /* 只佔據下區40% */
-    max-height: 350px !important;
-    border-radius: 20px 20px 0 0 !important;
-    padding: 8px;
-    overflow: hidden;
-    box-shadow: 0 -4px 20px rgba(0,0,0,0.3) !important;
+    width: 90% !important;
+    height: auto !important;
+    max-height: 55vh !important;
+    padding: 6px !important;
+    font-size: 10px !important;
   }
   .center-panel.collapsed {
-    height: 50px !important; /* 收起時只顯示標題欄 */
+    width: auto !important;
+    height: auto !important;
+    padding: 4px 8px !important;
   }
   .panel-header {
-    padding-bottom: 6px;
-    border-bottom: 2px solid #ddd;
-  }
-  .panel-header h1 {
-    font-size: 14px;
-  }
-  .panel-toggle {
-    padding: 4px 10px;
-    font-size: 12px;
-  }
-  .panel-content {
-    gap: 4px;
-    overflow-y: auto;
-    max-height: calc(40vh - 60px); /* 減去標題欄高度 */
-  }
-  .tile .price { display: none; }
-  .section {
-    padding: 6px;
-  }
-  .section h2 {
-    font-size: 12px;
+    padding: 4px 0;
     margin-bottom: 4px;
   }
+  .panel-header h1 {
+    font-size: 12px !important;
+  }
+  .panel-toggle {
+    padding: 3px 8px !important;
+    font-size: 10px !important;
+  }
+  .panel-content {
+    gap: 3px !important;
+    overflow-y: auto !important;
+    max-height: 45vh !important;
+  }
+  .top-section {
+    gap: 3px !important;
+  }
+  .section {
+    padding: 4px !important;
+    margin-bottom: 3px !important;
+  }
+  .section h2 {
+    font-size: 10px !important;
+    margin-bottom: 3px !important;
+  }
   #log {
-    max-height: 80px;
-    font-size: 10px;
+    max-height: 60px !important;
+    font-size: 9px !important;
   }
   .log .entry {
-    padding: 3px;
-    margin-bottom: 2px;
+    padding: 2px !important;
+    margin-bottom: 1px !important;
+    font-size: 9px !important;
   }
   .player-card {
-    padding: 6px;
-    font-size: 11px;
-    gap: 4px;
+    padding: 4px !important;
+    font-size: 9px !important;
+    gap: 2px !important;
+  }
+  .player-card .name {
+    font-size: 10px !important;
+  }
+  .player-card .cash {
+    font-size: 9px !important;
+  }
+  .controls-section {
+    gap: 3px !important;
   }
   button {
-    padding: 8px 12px;
-    font-size: 11px;
+    padding: 6px 8px !important;
+    font-size: 10px !important;
   }
-  .token {
-    width: 55px !important;
-    height: 55px !important;
-    font-size: 22px !important;
-    border-width: 4px !important;
-    z-index: 200 !important; /* 更高的 z-index */
-    box-shadow: 0 10px 25px rgba(0,0,0,1), 0 0 40px rgba(255,255,255,1), 0 0 10px currentColor !important;
-    opacity: 1 !important; /* 確保不透明 */
-    visibility: visible !important; /* 確保可見 */
-    display: grid !important; /* 確保顯示 */
-  }
+  .tile .price { display: none !important; }
   .tile {
-    min-width: 55px;
-    min-height: 55px;
+    font-size: 8px !important;
+  }
+  .tile .label {
+    font-size: 7px !important;
+  }
+  /* 棋子強制顯示 */
+  .token {
+    width: 60px !important;
+    height: 60px !important;
+    font-size: 24px !important;
+    border-width: 4px !important;
+    z-index: 500 !important;
+    box-shadow: 0 12px 30px rgba(0,0,0,1), 0 0 50px rgba(255,255,255,1), 0 0 15px currentColor !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: grid !important;
+    position: absolute !important;
+  }
+  .token-container {
+    z-index: 500 !important;
+    position: absolute !important;
+    display: flex !important;
   }
   #board {
     z-index: 1 !important;
+    position: relative !important;
   }
   #boardContainer {
-    margin-bottom: 0 !important; /* 移除下邊距，讓棋盤可以完整顯示 */
+    position: relative !important;
+    z-index: 1 !important;
   }
 }
 
-/* 手機橫式優化 */
-@media (max-width: 900px) and (orientation: landscape) {
-  .center-panel {
-    height: 50vh !important; /* 橫式時面板佔據50% */
-    max-height: 400px !important;
-  }
-  .panel-content {
-    max-height: calc(50vh - 60px) !important;
-  }
-  #boardContainer {
-    max-height: 50vh !important; /* 棋盤也限制高度 */
-  }
-}
 
-/* 手機直式優化 */
-@media (max-width: 480px) and (orientation: portrait) {
-  #boardContainer {
-    max-height: 60vh !important; /* 直式時棋盤佔據60% */
-  }
-  .token-container {
-    z-index: 300 !important; /* 確保棋子容器在最上層 */
-  }
-}
   
 .center-panel.minimized {
   width: 25%;
