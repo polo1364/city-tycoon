@@ -514,7 +514,8 @@ button.danger { background: #dc3545; color: #fff; border-color: #dc3545; }
   /* 手機版：與電腦版相同佈局，只縮小尺寸 */
   .center-panel {
     width: 70%;
-    height: 70%;
+    height: auto; /* 改為自動高度 */
+    max-height: 75%; /* 限制最大高度 */
     padding: 10px;
   }
   .center-panel.collapsed {
@@ -532,8 +533,13 @@ button.danger { background: #dc3545; color: #fff; border-color: #dc3545; }
   .section h2 {
     font-size: 11px;
   }
+  .log-section {
+    min-height: 100px; /* 設定最小高度 */
+    max-height: 150px; /* 限制最大高度 */
+  }
   #log {
     font-size: 10px;
+    max-height: none; /* 移除高度限制，由 log-section 控制 */
   }
   .player-card {
     font-size: 10px;
