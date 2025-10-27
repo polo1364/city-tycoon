@@ -936,6 +936,7 @@ button:active {
             <button id="btnSave">存檔</button>
             <button id="btnLoad">讀檔</button>
             <button id="btnReset" class="danger">🎮 新遊戲</button>
+            <button id="btnDebugTokens" style="background:#ff6b6b;color:#fff;">🔍 調試棋子</button>
           </div>
           
           <div class="section log-section">
@@ -2879,6 +2880,40 @@ var MAPS = {
     document.getElementById('btnReset').addEventListener('click', function(){ 
       showPlayerCountSelection();
     });
+    document.getElementById('btnDebugTokens').addEventListener('click', function(){
+      var tokens = document.querySelectorAll('.token');
+      var containers = document.querySelectorAll('.token-container');
+      var debugInfo = '=== 棋子調試資訊 ===\n\n';
+      debugInfo += '棋子數量: ' + tokens.length + '\n';
+      debugInfo += '容器數量: ' + containers.length + '\n\n';
+      
+      if (tokens.length > 0) {
+        var token = tokens[0];
+        var rect = token.getBoundingClientRect();
+        var styles = window.getComputedStyle(token);
+        debugInfo += '=== 第一個棋子資訊 ===\n';
+        debugInfo += 'display: ' + styles.display + '\n';
+        debugInfo += 'visibility: ' + styles.visibility + '\n';
+        debugInfo += 'opacity: ' + styles.opacity + '\n';
+        debugInfo += 'z-index: ' + styles.zIndex + '\n';
+        debugInfo += 'width: ' + styles.width + '\n';
+        debugInfo += 'height: ' + styles.height + '\n';
+        debugInfo += 'position: ' + styles.position + '\n';
+        debugInfo += 'top: ' + styles.top + '\n';
+        debugInfo += 'left: ' + styles.left + '\n';
+        debugInfo += 'bottom: ' + styles.bottom + '\n';
+        debugInfo += '\n在視窗中的位置:\n';
+        debugInfo += 'x: ' + rect.x + ', y: ' + rect.y + '\n';
+        debugInfo += 'width: ' + rect.width + ', height: ' + rect.height + '\n';
+        debugInfo += '是否在視窗內: ' + (rect.top >= 0 && rect.left >= 0 && rect.bottom <= window.innerHeight && rect.right <= window.innerWidth) + '\n';
+      } else {
+        debugInfo += '❗ 沒有找到任何棋子元素！\n';
+      }
+      
+      debugInfo += '\n視窗大小: ' + window.innerWidth + ' x ' + window.innerHeight;
+      
+      alert(debugInfo);
+    });}
     document.getElementById('btnAssets').addEventListener('click', showAssets);
     document.getElementById('btnCollection').addEventListener('click', showCardCollection);
     document.getElementById('btnBuild').addEventListener('click', function(){ 
