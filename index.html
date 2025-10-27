@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>大富翁</title>
+  <title>大富翁 - 全螢幕優化版</title>
   <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; width: 100%; overflow: hidden; }
@@ -536,10 +536,10 @@ button.danger { background: #dc3545; color: #fff; border-color: #dc3545; }
 @media (max-width: 480px) {
   /* 手機版：與電腦版相同佈局，只縮小尺寸 */
   .center-panel {
-    width: 70%;
+    width: 65%; /* 從 70% 縮小到 65% */
     height: auto; /* 改為自動高度 */
     max-height: 75%; /* 限制最大高度 */
-    padding: 10px;
+    padding: 8px; /* 縮小內邊距 */
   }
   .center-panel.collapsed {
     width: auto;
@@ -2058,7 +2058,7 @@ var MAPS = {
         
         const config = {
           roll: {freq: 440, dur: 0.1, vol: 0.3},
-          move: {freq: 523, dur: 0.05, vol: 0.1},
+          move: {freq: 523, dur: 0.08, vol: 0.25}, /* 增加音量和持續時間 */
           buy: {freq: 659, dur: 0.2, vol: 0.3},
           build: {freq: 784, dur: 0.3, vol: 0.3},
           error: {freq: 200, dur: 0.15, vol: 0.3},
@@ -2090,6 +2090,25 @@ var MAPS = {
     function sleep(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
     function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
     function clamp(n,a,b){ return Math.max(a, Math.min(b,n)); }
+    
+    // 隨機倍率函數（倍率越高機率越低）
+    function getRandomMultiplier(min, max) {
+      var weights = [];
+      for (var i = min; i <= max; i++) {
+        // 倍率越高，權重越低（逆序）
+        weights.push(max - i + 1);
+      }
+      var totalWeight = weights.reduce(function(sum, w) { return sum + w; }, 0);
+      var random = Math.random() * totalWeight;
+      var cumulative = 0;
+      for (var i = 0; i < weights.length; i++) {
+        cumulative += weights[i];
+        if (random < cumulative) {
+          return min + i;
+        }
+      }
+      return min;
+    }
 
     // ----- 經濟參數（提高整體金額） -----
     var START_SALARY = 6600;   // 起點薪資 ($200 * 33)
@@ -2349,6 +2368,9 @@ var MAPS = {
         var p = state.players[playerIdx];
         p.pos = (p.pos + 1) % 40;
         renderTokens();
+        
+        // 每移動一步播放音效
+        try { playSound('move'); } catch(e) {}
         
         // 添加移動效果到當前棋子
         $$('.token').forEach(function(tok){ tok.classList.remove('moving'); });
@@ -2616,23 +2638,29 @@ var MAPS = {
     async function onRoll(){ try{playSound("roll");}catch(e){}  var p=state.players[state.cur]; if (p.inJail) return {again:false}; $('#btnRoll').disabled=true; var d=rollDice(), d1=d[0], d2=d[1]; var isDouble=d1===d2; if (isDouble){ state.doublesInRow++; if (state.doublesInRow>=3){ log('⚠️ '+p.name+' 連續第三次擲出雙骰，被送入獄。', !p.isAI); goToJail(p); $('#btnEnd').disabled=false; return {again:false}; } } else { state.doublesInRow=0; } await sleep(1200); await moveSteps(p, d1+d2); await resolveTile(p, d1+d2); if (isDouble && p.alive && !p.inJail){ $('#turnInfo').textContent='雙骰！你可再擲一次。'; $('#btnRoll').disabled=false; $('#btnEnd').disabled=true; return {again:true}; } else { $('#btnEnd').disabled=false; return {again:false}; } }
     async function moveSteps(p, steps){ 
       var playerIdx = state.players.indexOf(p);
-      try { playSound('move'); } catch(e) {}
+      var oldPos = p.pos;
+      // 音效已在 animateTokenMove 中每步播放，此處不需要
       return new Promise(function(resolve) {
         animateTokenMove(playerIdx, steps, function() {
-          // 檢查是否經過起點
+          var newPos = p.pos;
+          // 檢查是否經過起點（但不是剛好停在起點）
           var passedGo = false;
-          for (var i = 0; i < steps; i++) {
-            var oldPos = (p.pos - steps + i + 40) % 40;
-            var newPos = (oldPos + 1) % 40;
-            if (newPos === 0) passedGo = true;
+          if (oldPos < newPos) {
+            // 正常前進，沒有跨越 0
+            passedGo = false;
+          } else if (oldPos > newPos) {
+            // 跨越了 0 點（從 39 回到 0 附近）
+            passedGo = true;
           }
-          if (passedGo) {
-            var bonus=START_SALARY; 
+          // 如果經過起點且不是剛好停在起點
+          if (passedGo && newPos !== 0) {
+            var multiplier = getRandomMultiplier(1, 3); // 1~3倍
+            var bonus = START_SALARY * multiplier;
             var bi=state.bonusNextGo.indexOf(p.id); 
             if (bi>=0){ bonus+=3300; state.bonusNextGo.splice(bi,1); } 
             p.cash+=bonus; 
             renderPlayers(); 
-            log('💵 '+p.name+' 經過起點，領 $'+bonus, !p.isAI);
+            log('💵 '+p.name+' 經過起點，領 '+multiplier+'倍薪水 $'+bonus, !p.isAI);
           }
           resolve();
         });
@@ -2674,15 +2702,25 @@ var MAPS = {
     // ---- 地格處理 ----
     async function resolveTile(p, diceTotal){
       var t=tiles[p.pos];
-      if (t.type==="PROPERTY") await onLandProperty(p,t);
+      if (t.type==="GO") {
+        // 剛好停在起點，2~5倍薪水
+        var multiplier = getRandomMultiplier(2, 5);
+        var bonus = START_SALARY * multiplier;
+        var bi=state.bonusNextGo.indexOf(p.id); 
+        if (bi>=0){ bonus+=3300; state.bonusNextGo.splice(bi,1); } 
+        p.cash+=bonus; 
+        renderPlayers(); 
+        log('🎉 '+p.name+' 剛好停在起點，領 '+multiplier+'倍薪水 $'+bonus+'!', !p.isAI);
+      }
+      else if (t.type==="PROPERTY") await onLandProperty(p,t);
       else if (t.type==="STATION") await onLandStation(p,t);
       else if (t.type==="UTILITY") await onLandUtility(p,t,diceTotal);
       else if (t.type==="TAX") await payToBank(p,t.amount,'稅金');
       else if (t.type==="CHANCE") await drawCard(p, chanceDeck, '機會', diceTotal);
       else if (t.type==="CHEST") await drawCard(p, chestDeck, '命運', diceTotal);
-      else if (t.type==="GOTOJAIL") goToJail(p);
-      else if (t.type==="JAIL") log(p.name+' 只是來探監。', !p.isAI);
-      else if (t.type==="FREE") log(p.name+' 於休息區放鬆片刻。', !p.isAI);
+      else if (t.type==="GOTOJAIL") await onGoToJail(p);
+      else if (t.type==="JAIL") await onJailVisit(p);
+      else if (t.type==="FREE") await onFreeParking(p);
     }
 
     function rentForProperty(ownerIdx, t){
@@ -2809,6 +2847,84 @@ var MAPS = {
     function doMortgage(p, idx){ var t=tiles[idx]; if (p.properties.indexOf(idx)<0 || p.mortgaged.indexOf(idx)>=0) return; if (houseCount(idx)>0) return; var val=Math.floor(getPrice(t)*0.5); p.mortgaged.push(idx); p.cash+=val; renderPlayers(); log('🏦 '+p.name+' 抵押《'+(t.name||t.label)+'》，取得 $'+val, !p.isAI); }
     function doUnmortgage(p, idx){ var t=tiles[idx]; var mi=p.mortgaged.indexOf(idx); if (mi<0) return; var cost=Math.floor(getPrice(t)*0.5*1.1); if (p.cash<cost){ log('現金不足，無法贖回。', !p.isAI); return; } p.cash-=cost; p.mortgaged.splice(mi,1); renderPlayers(); log('💳 '+p.name+' 贖回《'+(t.name||t.label)+'》，支付 $'+cost, !p.isAI); }
     function goToJail(p){ p.inJail=true; p.jailTurns=0; p.pos=10; renderTokens(); $('#turnInfo').textContent=p.name+' 入獄。'; }
+    // 特殊格子隨機事件系統
+    var jailVisitEvents = [
+      {text:'👮 探監時發現犯人藏有私煙，獲得線報獎金 $3300', type:'cash', value:3300, prob:0.15},
+      {text:'📚 在監獄圖書館讀到投資書籍，下次購買地產折扣 10%', type:'discount', value:0.1, prob:0.1},
+      {text:'🎂 給犯人送蛋糕，犯人感動地告訴你藏寶地點，獲得 $5000', type:'cash', value:5000, prob:0.08},
+      {text:'👮‍♀️ 與獄守聊天，獲得一張「出獄卡」', type:'jailcard', value:1, prob:0.07},
+      {text:'👀 只是來探監，沒有特別事件。', type:'none', value:0, prob:0.6}
+    ];
+    
+    var freeParkingEvents = [
+      {text:'🎰 在停車場撿到一隻賽車，賣掉獲得 $8000', type:'cash', value:8000, prob:0.12},
+      {text:'🎁 停車場舉辦抽獎活動，你中了頭獎 $10000!', type:'cash', value:10000, prob:0.08},
+      {text:'🛠️ 幫忙修車，車主感謝給了 $4000', type:'cash', value:4000, prob:0.15},
+      {text:'🎪 免費停車券，下次繳稅免費', type:'taxfree', value:1, prob:0.1},
+      {text:'🚗 在免費停車場休息片刻。', type:'none', value:0, prob:0.55}
+    ];
+    
+    var goToJailEvents = [
+      {text:'👮 被警察發現違規停車，罰款 $2000', type:'fine', value:2000, prob:0.2},
+      {text:'🚨 被檢舉逃稅，被判入獄並罰款 $3300', type:'fineheavy', value:3300, prob:0.15},
+      {text:'⚠️ 闖紅燈被拍照，罰款 $1650', type:'fine', value:1650, prob:0.25},
+      {text:'👮‍♂️ 被警察誤會，解釋後釋放，但浪費了時間', type:'none', value:0, prob:0.1},
+      {text:'👮 直接入獄，不經過起點。', type:'jail', value:0, prob:0.3}
+    ];
+    
+    function triggerRandomEvent(events) {
+      var rand = Math.random();
+      var cumulative = 0;
+      for (var i = 0; i < events.length; i++) {
+        cumulative += events[i].prob;
+        if (rand < cumulative) {
+          return events[i];
+        }
+      }
+      return events[events.length - 1];
+    }
+    
+    async function onJailVisit(p) {
+      var event = triggerRandomEvent(jailVisitEvents);
+      log(p.name + ' ' + event.text, !p.isAI);
+      if (event.type === 'cash') {
+        p.cash += event.value;
+        renderPlayers();
+      } else if (event.type === 'jailcard') {
+        p.jailFreeCards = (p.jailFreeCards || 0) + 1;
+        renderPlayers();
+      }
+    }
+    
+    async function onFreeParking(p) {
+      var event = triggerRandomEvent(freeParkingEvents);
+      log(p.name + ' ' + event.text, !p.isAI);
+      if (event.type === 'cash') {
+        p.cash += event.value;
+        renderPlayers();
+      } else if (event.type === 'taxfree') {
+        p.taxFree = (p.taxFree || 0) + 1;
+        renderPlayers();
+      }
+    }
+    
+    async function onGoToJail(p) {
+      var event = triggerRandomEvent(goToJailEvents);
+      log(p.name + ' ' + event.text, !p.isAI);
+      if (event.type === 'fine') {
+        p.cash -= event.value;
+        renderPlayers();
+        goToJail(p);
+      } else if (event.type === 'fineheavy') {
+        p.cash -= event.value;
+        renderPlayers();
+        goToJail(p);
+      } else if (event.type === 'jail') {
+        goToJail(p);
+      }
+      // type === 'none' 則什麼都不做
+    }
+
 
     // ---- 卡牌（保留原邏輯，金額沿用新參數） ----
     var chestDeck = shuffle([
