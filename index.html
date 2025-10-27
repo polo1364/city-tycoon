@@ -152,8 +152,34 @@ body {
 }
 
 .house-stack { position: absolute; left: 2px; top: 2px; display: flex; gap: 1px; z-index: 5; }
-.house { width: clamp(5px, 0.6vw, 8px); height: clamp(4px, 0.5vw, 6px); background: #10b981; border: 1px solid rgba(0,0,0,0.2); border-radius: 1px; }
-.hotel { width: clamp(7px, 0.8vw, 10px); height: clamp(5px, 0.6vw, 8px); background: #ef4444; border: 1px solid rgba(0,0,0,0.3); border-radius: 2px; }
+.house { 
+  width: clamp(7px, 0.8vw, 11px); 
+  height: clamp(6px, 0.7vw, 9px); 
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
+  border: 2px solid rgba(0,0,0,0.4); 
+  border-radius: 2px; 
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3), inset 0 1px 2px rgba(255,255,255,0.3);
+}
+.hotel { 
+  width: clamp(10px, 1.2vw, 15px); 
+  height: clamp(8px, 1vw, 12px); 
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); 
+  border: 2px solid rgba(0,0,0,0.5); 
+  border-radius: 3px; 
+  box-shadow: 0 3px 6px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.4), 0 0 8px rgba(239, 68, 68, 0.6);
+  position: relative;
+}
+.hotel::after {
+  content: 'H';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: clamp(5px, 0.6vw, 8px);
+  font-weight: 900;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
 
 .center-panel {
   position: absolute;
@@ -1008,7 +1034,7 @@ button:active {
             <button id="btnEnd" disabled>結束</button>
             <button id="btnAssets">資產</button>
             <button id="btnBuild">🏠 升級房子</button>
-            <button id="btnCollection">📚 卡牌圖鑑</button>
+            <button id="btnCollection">🎒 卡片背包</button>
             <button id="btnReset" class="danger">🎮 新遊戲</button>
           </div>
           
@@ -2202,7 +2228,7 @@ var MAPS = {
     var PlayerColors = ["#e74c3c","#2980b9","#27ae60","#8e44ad"];
 
     function uuid(){ try{ if (window.crypto && typeof window.crypto.randomUUID==='function') return window.crypto.randomUUID(); }catch(e){} return 'p-'+Math.random().toString(36).slice(2); }
-    function makePlayer(name,isAI,color){ return { id: uuid(), name:name, isAI:isAI, color:color, cash:100000, pos:0, inJail:false, jailTurns:0, outCard:0, properties:[], mortgaged:[], alive:true, rentBonusTemp:0 }; }
+    function makePlayer(name,isAI,color){ return { id: uuid(), name:name, isAI:isAI, color:color, cash:100000, pos:0, inJail:false, jailTurns:0, outCard:0, properties:[], mortgaged:[], alive:true, rentBonusTemp:0, heldCards:[] }; }
     function initPlayers(){
       state.players=[
         makePlayer("你",false,PlayerColors[0]),
@@ -2727,9 +2753,25 @@ var MAPS = {
       var base = baseRent(t.price);
       var h = houseCount(t.idx);
       if (h>0) return base * HOUSE_MULT[clamp(h,0,5)];
-      // 無房：若擁有整組，租金 *2
-      var mono = hasMonopoly(ownerIdx, t.group);
-      return base * (mono?2:1);
+      
+      // 無房：根據擁有同組地產數量計算租金倍率
+      var groupInfo = groupOwnedCount(ownerIdx, t.group);
+      var ownedCount = groupInfo.cnt;
+      var totalCount = groupInfo.total;
+      
+      var multiplier = 1;
+      if (ownedCount === totalCount) {
+        // 擁有整組：租金 2x
+        multiplier = 2;
+      } else if (ownedCount === 2) {
+        // 擁有 2 個：租金 1.5x
+        multiplier = 1.5;
+      } else {
+        // 擁有 1 個：正常租金 1x
+        multiplier = 1;
+      }
+      
+      return Math.floor(base * multiplier);
     }
 
     // ---- 觸地邏輯 ----
@@ -2744,9 +2786,49 @@ var MAPS = {
       } else if (ownerIdx===state.cur){
         log(p.name+' 來到自己的地《'+t.name+'》。', !p.isAI);
       } else {
-        var owner=state.players[ownerIdx]; if (owner.mortgaged.indexOf(idx)>=0){ log('《'+t.name+'》已抵押，免租。', !p.isAI); return; }
-        var rent=rentForProperty(ownerIdx, t) + (owner.rentBonusTemp||0);
-        await payToPlayer(p, owner, rent, '租金：《'+t.name+'》');
+        var owner=state.players[ownerIdx];
+        
+        // 檢查地主是否在監獄
+        if (owner.inJail) {
+          log('《'+t.name+'》的地主 '+owner.name+' 在監獄中，免租！', !p.isAI);
+          return;
+        }
+        
+        if (owner.mortgaged.indexOf(idx)>=0){ log('《'+t.name+'》已抵押，免租。', !p.isAI); return; }
+        
+        // 計算租金和倍率
+        var base = baseRent(t.price);
+        var h = houseCount(t.idx);
+        var rent = 0;
+        var multiplierText = '';
+        
+        if (h > 0) {
+          // 有房屋
+          rent = rentForProperty(ownerIdx, t);
+          multiplierText = ' (房屋 x' + HOUSE_MULT[clamp(h,0,5)] + ')';
+        } else {
+          // 無房屋，顯示同色倍率
+          var groupInfo = groupOwnedCount(ownerIdx, t.group);
+          var ownedCount = groupInfo.cnt;
+          var totalCount = groupInfo.total;
+          
+          var multiplier = 1;
+          if (ownedCount === totalCount) {
+            multiplier = 2;
+            multiplierText = ' (整組 x2)';
+          } else if (ownedCount === 2) {
+            multiplier = 1.5;
+            multiplierText = ' (2個 x1.5)';
+          } else {
+            multiplier = 1;
+            multiplierText = '';
+          }
+          
+          rent = Math.floor(base * multiplier);
+        }
+        
+        rent += (owner.rentBonusTemp||0);
+        await payToPlayer(p, owner, rent, '租金'+multiplierText+'：《'+t.name+'》');
       }
     }
     async function onLandStation(p,t){
@@ -2758,7 +2840,15 @@ var MAPS = {
       } else if (ownerIdx===state.cur){
         log(p.name+' 來到自己的《'+t.name+'》。', !p.isAI);
       } else {
-        var owner=state.players[ownerIdx]; if (owner.mortgaged.indexOf(idx)>=0){ log('《'+t.name+'》已抵押，免租。', !p.isAI); return; }
+        var owner=state.players[ownerIdx];
+        
+        // 檢查地主是否在監獄
+        if (owner.inJail) {
+          log('《'+t.name+'》的地主 '+owner.name+' 在監獄中，免租！', !p.isAI);
+          return;
+        }
+        
+        if (owner.mortgaged.indexOf(idx)>=0){ log('《'+t.name+'》已抵押，免租。', !p.isAI); return; }
         var ownerStations=[5,15,25,35].filter(function(s){ return owner.properties.indexOf(s)>=0 && owner.mortgaged.indexOf(s)<0; }).length;
         var rent=STATION_RENTS[clamp(ownerStations-1,0,3)] + (owner.rentBonusTemp||0);
         await payToPlayer(p, owner, rent, '車站租金：《'+t.name+'》');
@@ -2773,7 +2863,15 @@ var MAPS = {
       } else if (ownerIdx===state.cur){
         log(p.name+' 來到自己的《'+t.name+'》。', !p.isAI);
       } else {
-        var owner=state.players[ownerIdx]; if (owner.mortgaged.indexOf(idx)>=0){ log('《'+t.name+'》已抵押，免租。', !p.isAI); return; }
+        var owner=state.players[ownerIdx];
+        
+        // 檢查地主是否在監獄
+        if (owner.inJail) {
+          log('《'+t.name+'》的地主 '+owner.name+' 在監獄中，免租！', !p.isAI);
+          return;
+        }
+        
+        if (owner.mortgaged.indexOf(idx)>=0){ log('《'+t.name+'》已抵押，免租。', !p.isAI); return; }
         var both=[12,28].every(function(u){ return owner.properties.indexOf(u)>=0 && owner.mortgaged.indexOf(u)<0; });
         var rate=both?330:132; var rent=diceTotal*rate + (owner.rentBonusTemp||0);  // 原版 10 和 4，* 33 = 330 和 132
         await payToPlayer(p, owner, rent, '事業費用：《'+t.name+'》 '+rate+'×點數');
@@ -2952,8 +3050,8 @@ var MAPS = {
       {t:"cash",v:-2500,text:"收到罰單，付 $2500",rarity:"common",emoji:"🚨"},
       {t:"back3",text:"回退 3 格",rarity:"common",emoji:"⏪"},
       {t:"payTax",v:6600,text:"稅務稽核，支付 $6600",rarity:"common",emoji:"📋"},
-      {t:"moveTo",idx:24,text:"前進到『赤城門』",rarity:"common",emoji:"🎯"},
-      {t:"moveTo",idx:39,text:"前進到『雲頂塔』",rarity:"common",emoji:"🎯"},
+      {t:"moveTo",idx:24,text:"",rarity:"common",emoji:"🎯"},
+      {t:"moveTo",idx:39,text:"",rarity:"common",emoji:"🎯"},
       {t:"marketRush",text:"收租大月：本回合收租 +$825",bonus:825,rarity:"rare",emoji:"📈"},
       {t:"bonusNextGo",text:"下次經過起點 +$3300",rarity:"common",emoji:"💰"},
       {t:"cash",v:10000,text:"投資獲利，獲得 $10000",rarity:"rare",emoji:"📉"},
@@ -2963,6 +3061,11 @@ var MAPS = {
     ]);
     async function drawCard(p, deck, name, diceTotal){
       var card=deck.shift(); deck.push(card); 
+      
+      // 如果是 moveTo 類型且 text 為空，動態生成地點名稱
+      if (card.t === "moveTo" && card.text === "" && card.idx !== undefined) {
+        card.text = "前進到『" + tiles[card.idx].name + "』";
+      }
       
       // 記錄到收藏
       var collectionKey = name === '機會' ? 'chance' : 'chest';
@@ -2975,49 +3078,58 @@ var MAPS = {
       }
       state.cardCollection[collectionKey][card.text].count++;
       
-      // 顯示華麗卡牌
+      // 顯示華麗卡片
       await showFancyCard(card, name);
       
-      log('📜 '+p.name+' 抽到 '+name+' 卡：'+card.text, !p.isAI);
-      switch(card.t){
-        case "cash": if (card.v>=0){ p.cash+=card.v; renderPlayers(); } else { await payToBank(p, -card.v, name); } break;
-        case "moveTo": await moveTo(p, card.idx, true); await resolveTile(p, 0); break;
-        case "jail": goToJail(p); break;
-        case "outCard": p.outCard+=1; renderPlayers(); break;
-        case "collectFromEach": for (var i=0;i<state.players.length;i++){ var other=state.players[i]; if (other===p || !other.alive) continue; await payToPlayer(other, p, card.v, name+'卡'); } break;
-        case "payToEach": for (var j=0;j<state.players.length;j++){ var o=state.players[j]; if (o===p || !o.alive) continue; await payToPlayer(p, o, card.v, name+'卡'); } break;
-        case "nearestUtility": await moveToNearest(p, ["UTILITY"], diceTotal, true); break;
-        case "nearestStation": await moveToNearest(p, ["STATION"], diceTotal, true, true); break;
-        case "back3": await moveBack(p, 3); await resolveTile(p, diceTotal); break;
-        case "payTax": await payToBank(p, card.v, name+'卡'); break;
-        case "marketRush": p.rentBonusTemp += (card.bonus||25); $('#turnInfo').textContent='本回合收租 +$825'; break;
-        case "bonusNextGo": if (state.bonusNextGo.indexOf(p.id)<0) state.bonusNextGo.push(p.id); break;
-        case "freeRent": 
-          p.freeRentTurns = (p.freeRentTurns || 0) + (card.turns || 1);
-          log(p.name + ' 獲得免租金卡（' + card.turns + '回合）', !p.isAI);
-          break;
-        case "doubleRent":
-          p.doubleRentTurns = (p.doubleRentTurns || 0) + (card.turns || 1);
-          log(p.name + ' 獲得雙倍收租卡（' + card.turns + '回合）', !p.isAI);
-          break;
-        case "teleport":
-          if (!p.isAI) {
-            await showTeleportUI(p);
-          } else {
-            var randomPos = Math.floor(Math.random() * 40);
-            await moveTo(p, randomPos, false);
-            await resolveTile(p, diceTotal);
-          }
-          break;
-        case "swapPosition":
-          if (!p.isAI) {
-            await showSwapUI(p);
-          }
-          break;
-        case "protection":
-          p.protectionTurns = (p.protectionTurns || 0) + (card.turns || 1);
-          log(p.name + ' 獲得保護卡（' + card.turns + '回合）', !p.isAI);
-          break;
+      log('📏 '+p.name+' 抽到 '+name+' 卡：'+card.text, !p.isAI);
+      
+      // 區分立即生效卡和可持有卡
+      var immediateCards = ['cash', 'jail', 'collectFromEach', 'payToEach', 'payTax', 'marketRush', 'bonusNextGo'];
+      
+      if (immediateCards.indexOf(card.t) >= 0) {
+        // 立即生效的卡片
+        switch(card.t){
+          case "cash": 
+            if (card.v>=0){ 
+              p.cash+=card.v; 
+              renderPlayers(); 
+            } else { 
+              await payToBank(p, -card.v, name); 
+            } 
+            break;
+          case "jail": goToJail(p); break;
+          case "collectFromEach": 
+            for (var i=0;i<state.players.length;i++){ 
+              var other=state.players[i]; 
+              if (other===p || !other.alive) continue; 
+              await payToPlayer(other, p, card.v, name+'卡'); 
+            } 
+            break;
+          case "payToEach": 
+            for (var j=0;j<state.players.length;j++){ 
+              var o=state.players[j]; 
+              if (o===p || !o.alive) continue; 
+              await payToPlayer(p, o, card.v, name+'卡'); 
+            } 
+            break;
+          case "payTax": await payToBank(p, card.v, name+'卡'); break;
+          case "marketRush": 
+            p.rentBonusTemp += (card.bonus||25); 
+            $('#turnInfo').textContent='本回合收租 +$825'; 
+            break;
+          case "bonusNextGo": 
+            if (state.bonusNextGo.indexOf(p.id)<0) state.bonusNextGo.push(p.id); 
+            break;
+        }
+      } else {
+        // 可持有的卡片，放入背包
+        var cardCopy = JSON.parse(JSON.stringify(card));
+        cardCopy.id = uuid();
+        cardCopy.deckName = name;
+        cardCopy.diceTotal = diceTotal;
+        p.heldCards.push(cardCopy);
+        log('🎒 '+p.name+' 將卡片放入背包：'+card.text, !p.isAI);
+        renderPlayers();
       }
     }
     // 華麗卡牌顯示
@@ -3265,10 +3377,14 @@ var MAPS = {
     function showJailOptions(p){
       if (p.isAI) return;
       var canPay=p.cash>=JAIL_FINE;
-      var html='<p>你在獄中，可選擇：</p><ul><li>支付 $'+JAIL_FINE+' 立即出獄並擲骰</li><li>'+(p.outCard>0?'使用 1 張出獄卡':'嘗試擲出雙骰（最多 3 回合）')+'</li></ul><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;"><button id="jPay" '+(canPay?'':'disabled')+' class="ok">付保釋金</button>'+(p.outCard>0?'<button id="jCard" class="primary">使用出獄卡</button>':'')+'<button id="jTry" class="primary">嘗試擲骰</button></div>';
+      
+      // 檢查背包中是否有出獄卡
+      var hasOutCard = (p.heldCards || []).some(function(card) { return card.t === 'outCard'; });
+      
+      var html='<p>你在獄中，可選擇：</p><ul><li>支付 $'+JAIL_FINE+' 立即出獄並擲骰</li><li>'+(hasOutCard?'使用背包中的出獄卡':'嘗試擲出雙骰（最多 3 回合）')+'</li></ul><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;"><button id="jPay" '+(canPay?'':'disabled')+' class="ok">付保釋金</button>'+(hasOutCard?'<button id="jCard" class="primary">打開背包</button>':'')+' <button id="jTry" class="primary">嘗試擲骰</button></div>';
       showModal(html,false).then(function(){});
       var jPay=document.getElementById('jPay'); if (jPay) jPay.addEventListener('click', async function(){ await payToBank(p,JAIL_FINE,'保釋金'); if (!p.alive) return; p.inJail=false; p.jailTurns=0; document.getElementById('modal').classList.add('hidden'); await onRoll(); }, {once:true});
-      var jCard=document.getElementById('jCard'); if (jCard) jCard.addEventListener('click', async function(){ if (p.outCard>0){ p.outCard--; p.inJail=false; p.jailTurns=0; renderPlayers(); document.getElementById('modal').classList.add('hidden'); await onRoll(); } }, {once:true});
+      var jCard=document.getElementById('jCard'); if (jCard) jCard.addEventListener('click', function(){ document.getElementById('modal').classList.add('hidden'); showCardBag(); }, {once:true});
       var jTry=document.getElementById('jTry'); if (jTry) jTry.addEventListener('click', async function(){ document.getElementById('modal').classList.add('hidden'); var d=rollDice(), d1=d[0], d2=d[1], dbl=d1===d2; if (dbl){ p.inJail=false; p.jailTurns=0; log(p.name+' 擲出雙骰，出獄並移動 '+(d1+d2)+' 步。', !p.isAI); await moveSteps(p, d1+d2); await resolveTile(p, d1+d2); document.getElementById('btnEnd').disabled=false; } else { p.jailTurns++; log(p.name+' 未擲出雙骰（第 '+p.jailTurns+'/3 回合）。', !p.isAI); if (p.jailTurns>=3){ await payToBank(p, JAIL_FINE, '保釋金'); if (!p.alive){ document.getElementById('btnEnd').disabled=false; return; } p.inJail=false; p.jailTurns=0; await onRoll(); } else { document.getElementById('btnEnd').disabled=false; } } }, {once:true});
     }
 
@@ -3303,9 +3419,12 @@ var MAPS = {
       if (!canBuildHere(p, idx)) return;
       var cost = buildCost(idx);
       if (p.cash < cost){ log('現金不足，無法建屋。', !p.isAI); return; }
-      p.cash -= cost; state.houses[idx] = houseCount(idx)+1;
+      var oldCount = houseCount(idx);
+      p.cash -= cost; 
+      state.houses[idx] = oldCount + 1;
       state.hasUpgradedThisTurn = true; // 記錄本回合已升級
-      renderPlayers(); renderHouses(); log('🏠 '+p.name+' 在《'+tiles[idx].name+'》建造 1 棟（現有 '+houseCount(idx)+'）', !p.isAI);
+      renderPlayers(); renderHouses(); 
+      log('🏠 '+p.name+' 在《'+tiles[idx].name+'》建造第 '+(oldCount+1)+' 棟（現有 '+(oldCount+1)+'）', !p.isAI);
     }
     function trySellHouse(p, idx){
       if (!canSellHouseHere(p, idx)) return;
@@ -3314,71 +3433,51 @@ var MAPS = {
       renderPlayers(); renderHouses(); log('🔧 '+p.name+' 賣出 1 棟（《'+tiles[idx].name+'》），回收 $'+val, !p.isAI);
     }
 
-    // ---- 卡牌圖鑑 ----
-    function showCardCollection() {
-      var chanceCards = state.cardCollection.chance;
-      var chestCards = state.cardCollection.chest;
+    // ---- 卡片背包系統 ----
+    function showCardBag() {
+      var p = state.players[state.cur];
+      var heldCards = p.heldCards || [];
       
-      var chanceTotal = Object.keys(chanceCards).length;
-      var chestTotal = Object.keys(chestCards).length;
+      if (heldCards.length === 0) {
+        showModal('<h2 style="text-align:center;">🎒 卡片背包</h2><p style="text-align:center; color:#666; margin:30px 0;">背包是空的，快去抽卡吧！</p><button onclick="document.getElementById(\'modal\').classList.add(\'hidden\')" style="padding:12px 30px; background:#667eea; color:white; border:none; border-radius:10px; font-size:16px; font-weight:bold; cursor:pointer; width:100%;">關閉</button>', false);
+        return;
+      }
       
-      var chanceHTML = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">';
+      var cardsHTML = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; margin-top: 15px;">';
       
-      Object.keys(chanceCards).forEach(function(key) {
-        var item = chanceCards[key];
-        var card = item.card;
+      heldCards.forEach(function(card, index) {
         var rarityColors = {
-          common: '#a8b2d1',
-          rare: '#4facfe',
-          epic: '#fa709a'
+          common: 'linear-gradient(135deg, #a8b2d1 0%, #8892b0 100%)',
+          rare: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+          epic: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)'
         };
-        var color = rarityColors[card.rarity || 'common'];
+        var bgColor = rarityColors[card.rarity || 'common'];
         
-        chanceHTML += `
-          <div style="background: ${color}; padding: 15px; border-radius: 10px; color: white; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
-            <div style="font-size: 40px; margin-bottom: 8px;">${card.emoji || '🎴'}</div>
-            <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">${card.text.split('：')[0].split('，')[0]}</div>
-            <div style="font-size: 11px; opacity: 0.9;">已抽取 ${item.count} 次</div>
+        var canUse = canUseCard(p, card);
+        var useButtonStyle = canUse ? 
+          'background:#10b981; cursor:pointer;' : 
+          'background:#ccc; cursor:not-allowed; opacity:0.5;';
+        
+        cardsHTML += `
+          <div style="background: ${bgColor}; padding: 15px; border-radius: 10px; color: white; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+            <div style="font-size: 40px; text-align:center; margin-bottom: 8px;">${card.emoji || '🎴'}</div>
+            <div style="font-size: 14px; font-weight: bold; text-align:center; margin-bottom: 8px;">${card.text}</div>
+            <div style="font-size: 11px; opacity: 0.9; text-align:center; margin-bottom: 10px;">來源：${card.deckName}</div>
+            <button onclick="useCardFromBag(${index})" ${canUse ? '' : 'disabled'} style="${useButtonStyle} padding:8px 15px; color:white; border:none; border-radius:6px; font-size:13px; font-weight:bold; width:100%;">
+              ${canUse ? '使用卡片' : '無法使用'}
+            </button>
           </div>
         `;
       });
-      chanceHTML += '</div>';
-      
-      var chestHTML = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">';
-      
-      Object.keys(chestCards).forEach(function(key) {
-        var item = chestCards[key];
-        var card = item.card;
-        var rarityColors = {
-          common: '#a8b2d1',
-          rare: '#4facfe',
-          epic: '#fa709a'
-        };
-        var color = rarityColors[card.rarity || 'common'];
-        
-        chestHTML += `
-          <div style="background: ${color}; padding: 15px; border-radius: 10px; color: white; text-align: center; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
-            <div style="font-size: 40px; margin-bottom: 8px;">${card.emoji || '🎴'}</div>
-            <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">${card.text.split('：')[0].split('，')[0]}</div>
-            <div style="font-size: 11px; opacity: 0.9;">已抽取 ${item.count} 次</div>
-          </div>
-        `;
-      });
-      chestHTML += '</div>';
+      cardsHTML += '</div>';
       
       var html = `
         <div style="max-height: 70vh; overflow-y: auto;">
-          <h2 style="color: #333; margin-bottom: 10px;">📚 卡牌圖鑑</h2>
-          <div style="display: flex; gap: 20px; margin-bottom: 20px; font-size: 14px; color: #666;">
-            <div>機會卡收集：${chanceTotal} 種</div>
-            <div>命運卡收集：${chestTotal} 種</div>
+          <h2 style="color: #333; margin-bottom: 10px;">🎒 卡片背包</h2>
+          <div style="font-size: 14px; color: #666; margin-bottom: 15px;">
+            持有卡片：${heldCards.length} 張
           </div>
-          
-          <h3 style="color: #667eea; margin-top: 20px;">🎲 機會卡</h3>
-          ${chanceHTML}
-          
-          <h3 style="color: #f5576c; margin-top: 30px;">🀠 命運卡</h3>
-          ${chestHTML}
+          ${cardsHTML}
         </div>
         <button onclick="document.getElementById('modal').classList.add('hidden')" style="
           margin-top: 20px;
@@ -3397,6 +3496,95 @@ var MAPS = {
       showModal(html, false);
     }
     
+    function canUseCard(p, card) {
+      if (card.t === 'outCard') {
+        return p.inJail;
+      }
+      
+      if (state.cur !== state.players.indexOf(p)) {
+        return false;
+      }
+      
+      if (p.inJail && ['moveTo', 'nearestUtility', 'nearestStation', 'back3', 'teleport', 'swapPosition'].indexOf(card.t) >= 0) {
+        return false;
+      }
+      
+      return true;
+    }
+    
+    window.useCardFromBag = async function(cardIndex) {
+      var p = state.players[state.cur];
+      var card = p.heldCards[cardIndex];
+      
+      if (!canUseCard(p, card)) {
+        return;
+      }
+      
+      document.getElementById('modal').classList.add('hidden');
+      
+      p.heldCards.splice(cardIndex, 1);
+      
+      log('🎴 '+p.name+' 使用卡片：'+card.text, !p.isAI);
+      
+      await executeCardEffect(p, card);
+      
+      renderPlayers();
+    };
+    
+    async function executeCardEffect(p, card) {
+      switch(card.t){
+        case "moveTo": 
+          await moveTo(p, card.idx, true); 
+          await resolveTile(p, 0); 
+          break;
+        case "outCard": 
+          if (p.inJail) {
+            p.inJail = false;
+            p.jailTurns = 0;
+            log(p.name + ' 使用出獄卡出獄！', !p.isAI);
+            renderPlayers();
+          }
+          break;
+        case "nearestUtility": 
+          await moveToNearest(p, ["UTILITY"], card.diceTotal || 0, true); 
+          break;
+        case "nearestStation": 
+          await moveToNearest(p, ["STATION"], card.diceTotal || 0, true, true); 
+          break;
+        case "back3": 
+          await moveBack(p, 3); 
+          await resolveTile(p, card.diceTotal || 0); 
+          break;
+        case "freeRent": 
+          p.freeRentTurns = (p.freeRentTurns || 0) + (card.turns || 1);
+          log(p.name + ' 獲得免租金卡（' + card.turns + '回合）', !p.isAI);
+          break;
+        case "doubleRent":
+          p.doubleRentTurns = (p.doubleRentTurns || 0) + (card.turns || 1);
+          log(p.name + ' 獲得雙倍收租卡（' + card.turns + '回合）', !p.isAI);
+          break;
+        case "teleport":
+          if (!p.isAI) {
+            await showTeleportUI(p);
+          } else {
+            var randomPos = Math.floor(Math.random() * 40);
+            await moveTo(p, randomPos, false);
+            await resolveTile(p, card.diceTotal || 0);
+          }
+          break;
+        case "swapPosition":
+          if (!p.isAI) {
+            await showSwapUI(p);
+          }
+          break;
+        case "protection":
+          p.protectionTurns = (p.protectionTurns || 0) + (card.turns || 1);
+          log(p.name + ' 獲得保護卡（' + card.turns + '回合）', !p.isAI);
+          break;
+      }
+    }
+    
+
     // ---- AI 策略（升級版本） ----
     function aiShouldBuyProperty(p, t){
       var reserve = 500;
@@ -3419,7 +3607,31 @@ var MAPS = {
       if (p.inJail){
         if (p.jailTurns<2){
           var d=rollDice(), d1=d[0], d2=d[1], dbl=d1===d2;
-          if (dbl){ p.inJail=false; p.jailTurns=0; log(p.name+' 擲出雙骰出獄，移動 '+(d1+d2)+' 步。', true); await moveSteps(p, d1+d2); await resolveTile(p, d1+d2); }
+          if (dbl){ 
+            p.inJail=false; 
+            p.jailTurns=0; 
+            log(p.name+' 擲出雙骰出獄，移動 '+(d1+d2)+' 步。', true); 
+            await moveSteps(p, d1+d2); 
+            await resolveTile(p, d1+d2); 
+            
+            // 檢查是否停在自己的地產上
+            var currentTile = tiles[p.pos];
+            var isOnOwnProperty = false;
+            if (currentTile.type === "PROPERTY" || currentTile.type === "STATION" || currentTile.type === "UTILITY") {
+              var ownerIdx = ownerOf(p.pos);
+              if (ownerIdx === state.cur) {
+                isOnOwnProperty = true;
+              }
+            }
+            
+            if (isOnOwnProperty) {
+              await aiUnmortgageIfRich(p);
+              aiAutoBuild(p);
+            }
+            
+            endTurn(); 
+            return;
+          }
           else { p.jailTurns++; log(p.name+' 嘗試失敗（第 '+p.jailTurns+'/3 回合）', true); }
         } else {
           await ensureCash(p, JAIL_FINE);
@@ -3429,19 +3641,51 @@ var MAPS = {
           p.inJail=false; p.jailTurns=0;
           var res = await onRoll();
           if (res && res.again){ await sleep(400); await onRoll(); }
-          await aiUnmortgageIfRich(p);
-          aiAutoBuild(p);
+          
+          // 檢查是否停在自己的地產上
+          var currentTile = tiles[p.pos];
+          var isOnOwnProperty = false;
+          if (currentTile.type === "PROPERTY" || currentTile.type === "STATION" || currentTile.type === "UTILITY") {
+            var ownerIdx = ownerOf(p.pos);
+            if (ownerIdx === state.cur) {
+              isOnOwnProperty = true;
+            }
+          }
+          
+          if (isOnOwnProperty) {
+            await aiUnmortgageIfRich(p);
+            aiAutoBuild(p);
+          }
+          
           endTurn(); return;
         }
-        await aiUnmortgageIfRich(p);
-        aiAutoBuild(p);
+        
+        // 在監獄中不能贖回和建造
+        // await aiUnmortgageIfRich(p);
+        // aiAutoBuild(p);
+        
         endTurn(); return;
       }
       // 普通回合
       var r = await onRoll();
       if (r && r.again){ await sleep(400); r = await onRoll(); if (r && r.again){ await sleep(400); await onRoll(); } }
-      await aiUnmortgageIfRich(p);
-      aiAutoBuild(p);
+      
+      // 檢查是否停在自己的地產上
+      var currentTile = tiles[p.pos];
+      var isOnOwnProperty = false;
+      if (currentTile.type === "PROPERTY" || currentTile.type === "STATION" || currentTile.type === "UTILITY") {
+        var ownerIdx = ownerOf(p.pos);
+        if (ownerIdx === state.cur) {
+          isOnOwnProperty = true;
+        }
+      }
+      
+      // 只有停在自己地產上時，才能贖回和建造
+      if (isOnOwnProperty) {
+        await aiUnmortgageIfRich(p);
+        aiAutoBuild(p);
+      }
+      
       endTurn();
     }
     async function aiUnmortgageIfRich(p){
@@ -3453,32 +3697,37 @@ var MAPS = {
       }
     }
     function aiAutoBuild(p){
-      // 若持有整組且現金>1000，優先把該組平均建到 2 棟；之後再衝 3~4，最後旅館。
-      if (p.cash < 1000) return;
-      var groups = {};
-      p.properties.forEach(function(idx){ var g=tiles[idx].group; if (!g) return; groups[g]=groups[g]||[]; groups[g].push(idx); });
-      Object.keys(groups).forEach(function(g){
-        var slots = groups[g];
-        if (!slots.every(function(idx){ return p.properties.indexOf(idx)>=0 && p.mortgaged.indexOf(idx)<0; })) return;
-        var target = Math.min(4, Math.floor((p.cash-800)/buildCost(slots[0]))>=slots.length ? 2 : 1);
-        // 先均衡建到 target
-        for (var level=1; level<=target; level++){
-          for (var i=0;i<slots.length;i++){
-            var idx=slots[i];
-            if (p.cash < buildCost(idx)) return;
-            if (canBuildHere(p, idx) && houseCount(idx) < level){ tryBuild(p, idx); }
-          }
-        }
-        // 有錢繼續往上或旅館
-        for (var round=0; round<10; round++){
-          var progressed=false;
-          for (var i=0;i<slots.length;i++){
-            var idx=slots[i]; if (p.cash < buildCost(idx)) return;
-            if (canBuildHere(p, idx) && houseCount(idx) < 5){ tryBuild(p, idx); progressed=true; }
-          }
-          if (!progressed) break;
-        }
-      });
+      // AI 只能在當前停留的地產上建造房屋，且每次只能建造一棟
+      var currentPos = p.pos;
+      var currentTile = tiles[currentPos];
+      
+      // 檢查當前位置是否為地產類型
+      if (currentTile.type !== "PROPERTY") return;
+      
+      // 檢查是否擁有當前地產
+      if (p.properties.indexOf(currentPos) < 0) return;
+      
+      // 檢查是否被抵押
+      if (p.mortgaged.indexOf(currentPos) >= 0) return;
+      
+      // 跳過本回合剛購買的地產
+      if (state.justBought.indexOf(currentPos) >= 0) return;
+      
+      // 檢查是否已經建滿 5 棟
+      if (houseCount(currentPos) >= 5) return;
+      
+      // 檢查是否有足夠現金和是否可以建造
+      if (p.cash < buildCost(currentPos)) return;
+      if (!canBuildHere(p, currentPos)) return;
+      
+      // 只建造一棟
+      var cost = buildCost(currentPos);
+      p.cash -= cost;
+      var oldCount = houseCount(currentPos);
+      state.houses[currentPos] = oldCount + 1;
+      state.hasUpgradedThisTurn = true;
+      renderPlayers(); renderHouses();
+      log('🏠 '+p.name+' 在《'+tiles[currentPos].name+'》建造第 '+(oldCount+1)+' 棟（現有 '+(oldCount+1)+'）', false);
     }
 
     // ---- 事件綁定與存檔 ----
@@ -3490,7 +3739,7 @@ var MAPS = {
       showPlayerCountSelection();
     });
     document.getElementById('btnAssets').addEventListener('click', showAssets);
-    document.getElementById('btnCollection').addEventListener('click', showCardCollection);
+    document.getElementById('btnCollection').addEventListener('click', showCardBag);
     document.getElementById('btnBuild').addEventListener('click', function(){ 
       var p = state.players[state.cur];
       var currentTile = tiles[p.pos];
