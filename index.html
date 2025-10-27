@@ -211,6 +211,25 @@ body {
 }
 .panel-toggle:hover { background: #5568d3; }
 
+.header-buttons {
+  display: flex;
+  gap: 6px;
+}
+.header-btn {
+  background: #667eea;
+  color: #fff;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: clamp(10px, 1vw, 12px);
+  font-weight: 600;
+  transition: background 0.2s;
+}
+.header-btn:hover {
+  background: #5568d3;
+}
+
 .panel-content {
   flex: 1;
   overflow-y: auto;
@@ -486,7 +505,7 @@ button.danger { background: #dc3545; color: #fff; border-color: #dc3545; }
     gap: 4px;
   }
   .controls-section {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 4px;
   }
   .section {
@@ -530,6 +549,10 @@ button.danger { background: #dc3545; color: #fff; border-color: #dc3545; }
     padding: 4px 8px;
     font-size: 11px;
   }
+  .top-section {
+    grid-template-columns: 1fr 1fr; /* 並排顯示 */
+    gap: 6px; /* 縮小間距 */
+  }
   .section h2 {
     font-size: 11px;
   }
@@ -544,9 +567,12 @@ button.danger { background: #dc3545; color: #fff; border-color: #dc3545; }
   .player-card {
     font-size: 10px;
   }
+  .controls-section {
+    gap: 4px; /* 縮小按鈕間距 */
+  }
   button {
-    padding: 6px 10px;
-    font-size: 11px;
+    padding: 4px 8px; /* 縮小按鈕內邊距 */
+    font-size: 10px;
   }
   .tile .price { display: none; }
   /* 棋子顯示 */
@@ -937,6 +963,10 @@ button:active {
     <div class="center-panel" id="centerPanel">
         <div class="panel-header">
           <h1>🎲 大富翁</h1>
+          <div class="header-buttons">
+            <button id="btnSave" class="header-btn">存檔</button>
+            <button id="btnLoad" class="header-btn">讀檔</button>
+          </div>
         </div>
         
         <div class="panel-content" id="panelContent">
@@ -964,8 +994,6 @@ button:active {
             <button id="btnAssets">資產</button>
             <button id="btnBuild">🏠 升級房子</button>
             <button id="btnCollection">📚 卡牌圖鑑</button>
-            <button id="btnSave">存檔</button>
-            <button id="btnLoad">讀檔</button>
             <button id="btnReset" class="danger">🎮 新遊戲</button>
           </div>
           
