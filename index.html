@@ -2074,33 +2074,18 @@ var MAPS = {
 
     // ========== 音效系統 ==========
     let audioCtx = null;
-    let soundEnabled = true;
     
     function initAudio() {
       if (!audioCtx) {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         audioCtx = new AudioContext();
-        // 嘗試恢復 AudioContext（針對瀏覽器自動播放限制）
-        if (audioCtx.state === 'suspended') {
-          audioCtx.resume();
-        }
-        console.log('AudioContext 初始化:', audioCtx.state);
       }
       return audioCtx;
     }
     
     function playSound(type) {
-      if (!soundEnabled) return;
       try {
         const ctx = initAudio();
-        
-        // 確保 AudioContext 處於運行狀態
-        if (ctx.state === 'suspended') {
-          ctx.resume().then(() => {
-            console.log('AudioContext 已恢復');
-          });
-        }
-        
         const oscillator = ctx.createOscillator();
         const gainNode = ctx.createGain();
         
@@ -2108,14 +2093,14 @@ var MAPS = {
         gainNode.connect(ctx.destination);
         
         const config = {
-          roll: {freq: 440, dur: 0.15, vol: 0.5},
-          move: {freq: 523, dur: 0.1, vol: 0.4},
-          buy: {freq: 659, dur: 0.2, vol: 0.5},
-          build: {freq: 784, dur: 0.3, vol: 0.5},
-          purchase: {freq: 659, dur: 0.2, vol: 0.5},
-          error: {freq: 200, dur: 0.15, vol: 0.5},
-          click: {freq: 800, dur: 0.05, vol: 0.3}
-        }[type] || {freq: 440, dur: 0.1, vol: 0.3};
+          roll: {freq: 440, dur: 0.1, vol: 0.3},
+          move: {freq: 523, dur: 0.08, vol: 0.25},
+          buy: {freq: 659, dur: 0.2, vol: 0.3},
+          build: {freq: 784, dur: 0.3, vol: 0.3},
+          purchase: {freq: 659, dur: 0.2, vol: 0.3},
+          error: {freq: 200, dur: 0.15, vol: 0.3},
+          click: {freq: 800, dur: 0.05, vol: 0.15}
+        }[type] || {freq: 440, dur: 0.1, vol: 0.2};
         
         oscillator.frequency.value = config.freq;
         gainNode.gain.setValueAtTime(config.vol, ctx.currentTime);
@@ -2123,28 +2108,16 @@ var MAPS = {
         
         oscillator.start(ctx.currentTime);
         oscillator.stop(ctx.currentTime + config.dur);
-        
-        console.log('播放音效:', type, 'AudioContext 狀態:', ctx.state);
       } catch(e) {
-        console.error('音效錯誤:', e);
+        console.log('音效錯誤:', e);
       }
     }
     
     // 為所有按鈕添加點擊音效
     function addButtonSounds() {
-      // 在第一次點擊時啟動音效系統
-      let firstClick = true;
-      document.addEventListener('click', () => {
-        if (firstClick) {
-          firstClick = false;
-          initAudio();
-          console.log('音效系統已啟動');
-        }
-      }, { once: true });
-      
       document.querySelectorAll('button').forEach(btn => {
         btn.addEventListener('click', () => {
-          try { playSound('click'); } catch(e) { console.error(e); }
+          try { playSound('click'); } catch(e) {}
         });
       });
     }
