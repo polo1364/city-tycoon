@@ -753,8 +753,8 @@ MIT License
 ## 📧 聯絡方式
 
 如有問題或建議，歡迎聯繫：
-- Email: [your-email@example.com]
-- GitHub: [your-github-username]
+- Email: [right80626@hotmail.com]
+- GitHub: [polo1364]
 
 ## 🙏 致謝
 
