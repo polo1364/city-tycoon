@@ -1,58 +1,2084 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>音效測試</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>大富翁 - 全螢幕優化版</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 50px;
-      text-align: center;
-    }
-    button {
-      padding: 20px 40px;
-      font-size: 18px;
-      margin: 10px;
-      cursor: pointer;
-    }
-    #log {
-      margin-top: 30px;
-      text-align: left;
-      max-width: 600px;
-      margin-left: auto;
-      margin-right: auto;
-      background: #f0f0f0;
-      padding: 20px;
-      border-radius: 8px;
-    }
-  </style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; width: 100%; overflow: hidden; }
+body {
+  font-family: "Noto Sans TC", "Microsoft JhengHei", system-ui, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+        position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#game-container {
+  width: min(98vh, 98vw);
+  height: min(98vh, 98vw);
+  position: relative;
+}
+
+.board {
+  width: 100%;
+  height: 100%;
+  background: #fff;
+  border: 3px solid #333;
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: repeat(11, 1fr);
+  grid-template-rows: repeat(11, 1fr);
+  position: relative;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+}
+
+.tile {
+  border: 1px solid #ccc;
+  position: relative;
+  padding: 2px;
+  background: #fafbff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-size: clamp(7px, 0.8vw, 10px);
+  overflow: hidden;
+}
+.tile.corner { background: #f1f3f9; font-weight: 700; }
+.tile .label { font-size: clamp(7px, 0.8vw, 11px); font-weight: 600; line-height: 1.1; word-break: break-all; }
+.tile .price { font-size: clamp(6px, 0.6vw, 9px); color: #666; }
+.tile .badge { position: absolute; top: 0; left: 0; padding: 1px 2px; font-size: clamp(6px, 0.6vw, 8px); background: #333; color: #fff; border-bottom-right-radius: 3px; }
+.tile .owner { 
+  position: absolute; 
+  right: 4px; 
+  bottom: 4px; 
+  width: clamp(18px, 2vw, 26px); 
+  height: clamp(18px, 2vw, 26px); 
+  border-radius: 50%; 
+  border: 3px solid #fff; 
+  box-shadow: 0 3px 10px rgba(0,0,0,0.8), inset 0 2px 4px rgba(255,255,255,0.4), 0 0 0 1px rgba(0,0,0,0.3); 
+  z-index: 12; 
+}
+.tile .level-badge { 
+  position: absolute; 
+  left: 4px; 
+  top: 4px; 
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
+  color: #fff; 
+  font-size: clamp(10px, 1.1vw, 15px); 
+  font-weight: 900; 
+  padding: 3px 6px; 
+  border-radius: 5px; 
+  line-height: 1; 
+  z-index: 12;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.5), 0 0 0 2px rgba(255,255,255,0.4);
+  border: 2px solid rgba(255,255,255,0.6);
+  letter-spacing: 0.5px;
+}
+.tile .level-badge.hotel { 
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); 
+}
+.tile.property .colorbar { height: clamp(3px, 0.4vw, 6px); border-radius: 2px; margin-bottom: 1px; }
+.tile.station::after, .tile.utility::after, .tile.tax::after, .tile.chance::after, 
+.tile.chest::after, .tile.gotojail::after, .tile.jail::after, .tile.start::after, .tile.free::after {
+  position: absolute; right: 1px; top: 1px; font-size: clamp(10px, 1.2vw, 14px);
+}
+.tile.station::after { content: "🚉"; }
+.tile.utility::after { content: "⚙️"; }
+.tile.tax::after { content: "💰"; }
+.tile.chance::after { content: "🎲"; }
+.tile.chest::after { content: "🂠"; }
+.tile.gotojail::after { content: "🚔"; }
+.tile.jail::after { content: "🧱"; }
+.tile.start::after { content: "🏁"; }
+.tile.free::after { content: "🅿️"; }
+
+.token {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(14px, 1.5vw, 18px);
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  width: clamp(40px, 3.5vw, 50px); /* 提高最小寬度 */
+  height: clamp(40px, 3.5vw, 50px); /* 提高最小高度 */
+  border-radius: 50%;
+  border: 3px solid #fff;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.8), 0 0 20px rgba(255,255,255,0.4), 0 0 0 3px rgba(0,0,0,0.3);
+  position: absolute;
+  bottom: 50%;
+  left: 50%;
+  transform: translate(calc(-50% + var(--tx, 0)), calc(-50% + var(--ty, 0)));
+  display: grid;
+  place-items: center;
+  color: #fff;
+  text-shadow: 0 0 6px rgba(0,0,0,0.8), 0 2px 4px rgba(0,0,0,0.6);
+  font-size: clamp(12px, 1.4vw, 17px);
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 120; /* 提高棋子的 z-index */
+  animation: tokenGlow 2s ease-in-out infinite;
+}
+.token[data-p="0"] { --tx: 0px; --ty: 0px; }
+.token[data-p="1"] { --tx: clamp(8px, 1vw, 12px); --ty: clamp(8px, 1vw, 12px); }
+.token[data-p="2"] { --tx: clamp(-8px, -1vw, -12px); --ty: clamp(8px, 1vw, 12px); }
+.token[data-p="3"] { --tx: clamp(8px, 1vw, 12px); --ty: clamp(-8px, -1vw, -12px); }
+
+.token.moving {
+  transform: translate(calc(-50% + var(--tx, 0)), calc(-50% + var(--ty, 0))) scale(2.5);
+  z-index: 30;
+  filter: drop-shadow(0 0 30px currentColor) drop-shadow(0 0 60px currentColor);
+  animation: pulse 0.4s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { transform: translate(calc(-50% + var(--tx, 0)), calc(-50% + var(--ty, 0))) scale(2.5); }
+  50% { transform: translate(calc(-50% + var(--tx, 0)), calc(-50% + var(--ty, 0))) scale(2.8); }
+}
+
+@keyframes tokenGlow {
+  0%, 100% { 
+    transform: translate(calc(-50% + var(--tx, 0)), calc(-50% + var(--ty, 0))) scale(1); 
+    box-shadow: 0 6px 16px rgba(0,0,0,0.8), 0 0 20px rgba(255,255,255,0.4), 0 0 0 3px rgba(0,0,0,0.3);
+  }
+  50% { 
+    transform: translate(calc(-50% + var(--tx, 0)), calc(-50% + var(--ty, 0))) scale(1.15); 
+    box-shadow: 0 8px 20px rgba(0,0,0,0.9), 0 0 30px rgba(255,255,255,0.6), 0 0 0 3px rgba(0,0,0,0.3);
+  }
+}
+
+.house-stack { position: absolute; left: 2px; top: 2px; display: flex; gap: 1px; z-index: 5; }
+.house { 
+  width: clamp(7px, 0.8vw, 11px); 
+  height: clamp(6px, 0.7vw, 9px); 
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
+  border: 2px solid rgba(0,0,0,0.4); 
+  border-radius: 2px; 
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3), inset 0 1px 2px rgba(255,255,255,0.3);
+}
+.hotel { 
+  width: clamp(10px, 1.2vw, 15px); 
+  height: clamp(8px, 1vw, 12px); 
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); 
+  border: 2px solid rgba(0,0,0,0.5); 
+  border-radius: 3px; 
+  box-shadow: 0 3px 6px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.4), 0 0 8px rgba(239, 68, 68, 0.6);
+  position: relative;
+}
+.hotel::after {
+  content: 'H';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: clamp(5px, 0.6vw, 8px);
+  font-weight: 900;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.center-panel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: clamp(55%, 60vw, 63.6%); /* 響應式寬度 */
+  height: auto; /* 自動高度 */
+  max-height: 70vh; /* 限制最大高度 */
+  padding: clamp(4px, 1vw, 12px); /* 響應式內邊距 */
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: clamp(8px, 2vw, 16px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.center-panel.minimized {
+  width: 25%;
+  height: 25%;
+  opacity: 0.2;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.8);
+}
+
+.center-panel.collapsed {
+  width: auto;
+  height: auto;
+  padding: 6px 10px;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 6px;
+  border-bottom: 2px solid #ddd;
+  flex-shrink: 0;
+}
+.panel-header h1 {
+  font-size: clamp(12px, 1.4vw, 18px);
+  color: #333;
+  font-weight: 700;
+}
+.panel-toggle {
+  background: #667eea;
+  color: #fff;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: clamp(10px, 1.1vw, 13px);
+  font-weight: 600;
+  transition: background 0.2s;
+}
+.panel-toggle:hover { background: #5568d3; }
+
+.header-buttons {
+  display: flex;
+  gap: 6px;
+}
+.header-btn {
+  background: #667eea;
+  color: #fff;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: clamp(10px, 1vw, 12px);
+  font-weight: 600;
+  transition: background 0.2s;
+}
+.header-btn:hover {
+  background: #5568d3;
+}
+
+.panel-content {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(6px, 0.8vw, 10px);
+}
+.panel-content.hidden { display: none; }
+
+.section {
+  background: #f8f9fa;
+  padding: clamp(6px, 0.8vw, 10px);
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+}
+.section h2 {
+  font-size: clamp(11px, 1.2vw, 15px);
+  margin-bottom: 6px;
+  color: #495057;
+  font-weight: 700;
+}
+
+.top-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(6px, 0.8vw, 10px);
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+}
+.current-player-area, .players-area {
+  background: #f8f9fa;
+  padding: clamp(6px, 0.8vw, 10px);
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+}
+.current-player-area h2, .players-area h2 {
+  font-size: clamp(10px, 1.1vw, 14px);
+  margin-bottom: 4px;
+}
+#playersPanel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+#playersPanel .row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: clamp(9px, 1vw, 11px);
+  padding: 3px;
+  background: white;
+  border-radius: 4px;
+}
+
+.dice-container {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin: 4px 0;
+}
+.die {
+  width: clamp(24px, 2.5vw, 44px); /* 更小的最小值 */
+  height: clamp(24px, 2.5vw, 44px);
+  display: grid;
+  place-items: center;
+  border: 2px solid #495057;
+  border-radius: 6px;
+  background: #fff;
+  font-weight: 700;
+  font-size: clamp(12px, 1.5vw, 22px); /* 更小的字體 */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+.turn-info {
+  font-size: clamp(10px, 1.1vw, 13px);
+  color: #666;
+  margin-top: 4px;
+}
+
+.player-row {
+  display: grid;
+  grid-template-columns: clamp(10px, 1.2vw, 14px) 1fr auto;
+  gap: 4px;
+  align-items: center;
+  padding: 2px 0;
+  font-size: clamp(9px, 1vw, 12px);
+}
+.player-swatch {
+  width: clamp(8px, 1vw, 12px);
+  height: clamp(8px, 1vw, 12px);
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.3);
+}
+.player-name { font-weight: 600; }
+.player-cash { font-variant-numeric: tabular-nums; color: #28a745; font-weight: 600; }
+
+.controls-section {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: clamp(4px, 0.5vw, 6px);
+}
+button {
+  border: 1px solid #ced4da;
+  background: #fff;
+  color: #212529;
+  padding: clamp(5px, 0.6vw, 8px) clamp(6px, 0.7vw, 10px);
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: clamp(9px, 1vw, 12px);
+  font-weight: 600;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+button:hover:not(:disabled) { background: #e9ecef; transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+button:active:not(:disabled) { transform: translateY(0); }
+button.primary { background: #2b6ef3; color: #fff; border-color: #2b6ef3; }
+button.ok { background: #28a745; color: #fff; border-color: #28a745; }
+button.danger { background: #dc3545; color: #fff; border-color: #dc3545; }
+
+.log-section {
+  flex: 3;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 120px;
+  max-height: 200px;
+}
+.log-section h2 {
+  font-size: clamp(11px, 1.2vw, 15px);
+  margin-bottom: 6px;
+  color: #333;
+}
+.log-content {
+  flex: 1;
+  overflow-y: auto;
+  font-size: clamp(9px, 1vw, 12px);
+  line-height: 1.4;
+  background: #f8f9fa;
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+}
+.log-entry {
+  border-top: 1px dashed #dee2e6;
+  padding: 3px 0;
+}
+.log-entry.me {
+  background: #fff3cd;
+  border-left: 3px solid #ffc107;
+  padding-left: 6px;
+  margin-left: -6px;
+}
+
+.toast {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: clamp(12px, 1.3vw, 16px);
+  text-align: center;
+  max-width: 80%;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.6s ease;
+  z-index: 200;
+  font-weight: 600;
+}
+.toast.hidden { opacity: 0; }
+
+.modal {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 300;
+}
+.modal.hidden { display: none; }
+.modal-content {
+  width: min(400px, 90vw);
+  background: #fff;
+  border-radius: 12px;
+  border: 2px solid #333;
+  padding: 16px;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.drawer {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: grid;
+  place-items: end;
+  z-index: 300;
+}
+.drawer.hidden { display: none; }
+.drawer-content {
+  width: min(600px, 95vw);
+  height: min(70vh, 600px);
+  background: #fff;
+  border-radius: 12px 12px 0 0;
+  border: 2px solid #333;
+  padding: 12px;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e0e0e0;
+}
+.drawer-header h3 {
+  font-size: clamp(13px, 1.4vw, 17px);
+  font-weight: 700;
+}
+#assetsBody { overflow: auto; }
+
+.asset-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: clamp(10px, 1.1vw, 13px);
+}
+.asset-table th, .asset-table td {
+  border: 1px solid #dee2e6;
+  padding: 6px;
+}
+.asset-table th { background: #f8f9fa; font-weight: 600; }
+.asset-table button {
+  padding: 4px 6px;
+  font-size: clamp(9px, 1vw, 11px);
+}
+
+#diag {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 6px 10px;
+  font-size: clamp(10px, 1.1vw, 12px);
+  background: #28a745;
+  color: #fff;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  z-index: 400;
+}
+#diag.err { background: #dc3545; }
+
+@media (max-width: 768px) {
+  .center-panel {
+    width: 60%; /* 縮小寬度 */
+    height: auto;
+    max-height: 68%;
+    padding: 6px 4px; /* 減少左右內邊距 */
+  }
+  .die {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 16px !important;
+  }
+  .panel-header h1 {
+    font-size: 14px;
+  }
+  .top-section {
+    grid-template-columns: 1fr 1fr; /* 並排顯示 */
+    gap: 4px;
+  }
+  .current-player-area, .players-area {
+    min-height: 80px; /* 縮小最小高度 */
+  }
+  .controls-section {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+  }
+  .section {
+    padding: 4px;
+  }
+  .section h2 {
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+  #log {
+    max-height: 80px;
+    font-size: 10px;
+  }
+  .player-card {
+    padding: 4px;
+    font-size: 11px;
+  }
+  button {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* 手機版：與電腦版相同佈局，只縮小尺寸 */
+  .center-panel {
+    width: 58%; /* 進一步縮小寬度 */
+    height: auto;
+    max-height: 70%; /* 降低最大高度 */
+    padding: 6px 4px; /* 減少左右內邊距 */
+  }
+  .center-panel.collapsed {
+    width: auto;
+    height: auto;
+    padding: 4px 8px;
+  }
+  .panel-header h1 {
+    font-size: 14px;
+  }
+  .panel-toggle {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+  .top-section {
+    grid-template-columns: 1fr 1fr; /* 並排顯示 */
+    gap: 4px; /* 縮小間距 */
+  }
+  .current-player-area, .players-area {
+    min-height: 80px; /* 進一步縮小高度 */
+    padding: 4px; /* 減少內邊距 */
+  }
+  .current-player-area h2, .players-area h2 {
+    margin-bottom: 2px; /* 減少標題下方間距 */
+  }
+  .dice-container {
+    gap: 3px;
+  }
+  .die {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 14px !important;
+  }
+  .section h2 {
+    font-size: 11px;
+  }
+  .log-section {
+    min-height: 100px; /* 設定最小高度 */
+    max-height: 150px; /* 限制最大高度 */
+  }
+  #log {
+    font-size: 10px;
+    max-height: none; /* 移除高度限制，由 log-section 控制 */
+  }
+  .player-card {
+    font-size: 10px;
+  }
+  .controls-section {
+    gap: 4px; /* 縮小按鈕間距 */
+  }
+  button {
+    padding: 4px 8px; /* 縮小按鈕內邊距 */
+    font-size: 10px;
+  }
+  .tile .price { display: none; }
+  /* 棋子顯示 */
+  .token {
+    width: 50px !important;
+    height: 50px !important;
+    font-size: 20px !important;
+    z-index: 500 !important;
+  }
+}
+
+
+  
+.center-panel.minimized {
+  width: 25%;
+  height: 25%;
+  opacity: 0.2;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.8);
+}
+
+
+.token.moving {
+  transform: translate(calc(-50% + var(--tx, 0)), calc(-50% + var(--ty, 0))) scale(2.5);
+  z-index: 30;
+  filter: drop-shadow(0 0 30px currentColor) drop-shadow(0 0 60px currentColor);
+  animation: pulse 0.4s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { transform: translate(calc(-50% + var(--tx, 0)), calc(-50% + var(--ty, 0))) scale(2.5); }
+  50% { transform: translate(calc(-50% + var(--tx, 0)), calc(-50% + var(--ty, 0))) scale(2.8); }
+}
+
+
+/* 玩家佔點 - 格子背景色 */
+.tile.owned {
+  background: var(--owner-color) !important;
+  opacity: 0.85;
+}
+
+
+/* ========== 視覺風格增強（不改變佈局） ========== */
+
+/* 背景美化 */
+body { 
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
+}
+
+body::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(255, 215, 0, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(138, 43, 226, 0.1) 0%, transparent 50%);
+  animation: bgMove 20s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes bgMove {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(30px, 30px); }
+}
+
+#app {
+  position: relative;
+  z-index: 1;
+}
+
+/* 棋盤容器美化 */
+#boardContainer {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
+
+/* 棋盤美化 */
+#board {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  box-shadow: 
+    0 0 0 4px rgba(255, 215, 0, 0.3),
+    0 0 0 8px rgba(255, 215, 0, 0.2),
+    0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+/* 格子美化 */
+.tile {
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+  transition: all 0.3s ease;
+}
+
+.tile:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+}
+
+.tile.corner {
+  background: linear-gradient(145deg, #FFD700, #FFA500);
+  color: #fff;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.color-bar {
+  box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* 控制面板美化 */
+#panel {
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 2px solid rgba(255, 215, 0, 0.5);
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+#panel::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #667eea, #764ba2);
+}
+
+/* 骰子區域美化 */
+#diceArea {
+  background: linear-gradient(145deg, #ffffff, #f5f5f5);
+  border-radius: 12px;
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  border: 2px solid rgba(255, 215, 0, 0.3);
+}
+
+#diceArea h3 {
+  color: #667eea;
+}
+
+/* 3D骰子容器 */
+.dice-container {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  perspective: 1000px;
+}
+
+/* 3D骰子 */
+.die {
+  width: 80px;
+  height: 80px;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.6s;
+  font-size: 40px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #333;
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+  border-radius: 12px;
+  border: 4px solid #FFD700;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* 骰子滾動動畫 */
+.die.rolling {
+  animation: dice3DRoll 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes dice3DRoll {
+  0% { 
+    transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1);
+  }
+  20% { 
+    transform: rotateX(360deg) rotateY(180deg) rotateZ(180deg) scale(1.3);
+  }
+  40% { 
+    transform: rotateX(720deg) rotateY(360deg) rotateZ(360deg) scale(1.5);
+  }
+  60% { 
+    transform: rotateX(1080deg) rotateY(540deg) rotateZ(540deg) scale(1.4);
+  }
+  80% { 
+    transform: rotateX(1440deg) rotateY(720deg) rotateZ(720deg) scale(1.2);
+  }
+  100% { 
+    transform: rotateX(1800deg) rotateY(900deg) rotateZ(900deg) scale(1);
+  }
+}
+
+/* 按鈕美化 */
+button {
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+button:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+#btnRoll, #btnBuy {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+}
+
+#btnEnd, #btnSkip {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  border: none;
+}
+
+#btnAssets, #btnBuild, #btnCardCollection {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+  border: none;
+}
+
+#btnSave, #btnLoad {
+  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+  color: white;
+  border: none;
+}
+
+#btnReset {
+  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+  color: white;
+  border: none;
+}
+
+/* 玩家區域美化 */
+#playersArea {
+  background: linear-gradient(145deg, #ffffff, #f5f5f5);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+#playersArea h3 {
+  color: #667eea;
+}
+
+.player-card {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.player-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--player-color), transparent);
+}
+
+.player-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.player-card.current {
+  border-color: #FFD700;
+  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3);
+}
+
+/* 戰況紀錄美化 */
+#logSection {
+  background: linear-gradient(145deg, #ffffff, #f5f5f5);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+#logSection h3 {
+  color: #667eea;
+}
+
+#log::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, #667eea, #764ba2);
+}
+
+#log div::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+/* 模態框美化 */
+#modal {
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content {
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(50px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-content h2 {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Toast美化 */
+.toast {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 50px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  animation: toastSlide 0.3s ease;
+}
+
+@keyframes toastSlide {
+  from { transform: translateX(-50%) translateY(-100px); opacity: 0; }
+  to { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+</style>
 </head>
 <body>
-  <h1>音效系統測試</h1>
-  <p>點擊按鈕測試音效</p>
-  
-  <button id="testBtn">測試音效</button>
-  <button id="rollBtn">擲骰音效</button>
-  <button id="moveBtn">移動音效</button>
-  
-  <div id="log"></div>
+  <div id="game-container">
+    <section class="board" id="board">
+      <div id="toast" class="toast hidden"></div>
+    </section>
+    
+    <div class="center-panel" id="centerPanel">
+        <div class="panel-header">
+          <h1>🎲 大富翁</h1>
+          <div class="header-buttons">
+            <button id="btnSave" class="header-btn">存檔</button>
+            <button id="btnLoad" class="header-btn">讀檔</button>
+          </div>
+        </div>
+        
+        <div class="panel-content" id="panelContent">
+          <div class="section top-section">
+            <div class="current-player-area">
+              <h2>當前玩家</h2>
+              <div id="currentPlayer"></div>
+              <div class="dice-container">
+                <div id="dice1" class="die">-</div>
+                <div id="dice2" class="die">-</div>
+              </div>
+              <div class="turn-info" id="turnInfo"></div>
+            </div>
+            <div class="players-area">
+              <h2>玩家列表</h2>
+              <div id="playersPanel"></div>
+            </div>
+          </div>
+          
+          <div class="section controls-section">
+            <button id="btnRoll" class="primary">🎲 擲骰</button>
+            <button id="btnBuy" class="ok" disabled>買下</button>
+            <button id="btnSkip" disabled>略過</button>
+            <button id="btnEnd" disabled>結束</button>
+            <button id="btnAssets">資產</button>
+            <button id="btnBuild">🏠 升級房子</button>
+            <button id="btnCollection">🎒 卡片背包</button>
+            <button id="btnReset" class="danger">🎮 新遊戲</button>
+          </div>
+          
+          <div class="section log-section">
+            <h2>戰況紀錄</h2>
+            <div class="log-content" id="log"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal" class="modal hidden">
+    <div class="modal-content">
+      <div id="modalBody"></div>
+      <div class="modal-actions">
+        <button id="modalOk" class="ok">確定</button>
+        <button id="modalCancel">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="assetsPanel" class="drawer hidden">
+    <div class="drawer-content">
+      <div class="drawer-header">
+        <h3>資產與建屋</h3>
+        <button id="btnCloseAssets">✕</button>
+      </div>
+      <div id="assetsBody"></div>
+    </div>
+  </div>
+
+  <div id="diag">✅ v2.3 初始化完成。</div>
 
   <script>
-    let audioCtx = null;
-    const logEl = document.getElementById('log');
+window.__TYCOON_V23_READY__=true;
+// 城市資本戰 Web 版 v2.3：棋子移動 + 5段建屋 + 經濟升級 + 直式優化
+"use strict";
+(function(){
+  var diagEl = document.getElementById('diag');
+  function diagOK(msg){ if (diagEl){ diagEl.className=''; diagEl.textContent='✅ '+msg; setTimeout(function(){ diagEl.style.display='none'; }, 3000); } }
+  function diagERR(msg){ if (diagEl){ diagEl.className='err'; diagEl.textContent='🚨 '+msg; } }
+
+  window.addEventListener('error', function(e){ diagERR('JS 錯誤：'+(e.message||e)); });
+  window.addEventListener('unhandledrejection', function(e){ diagERR('Promise 錯誤：'+(e.reason&&e.reason.message||e.reason)); });
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
+
+  function boot(){ try{ window.__TYCOON_V23_READY__=true; main(); diagOK("v2.3 初始化完成。"); }catch(err){ diagERR("初始化失敗："+(err&&err.message||err)); console.error(err); } }
+
+  function main(){
+
+    // ========== 地圖數據 ==========
     
-    function log(msg) {
-      const time = new Date().toLocaleTimeString();
-      logEl.innerHTML += `[${time}] ${msg}<br>`;
-      console.log(msg);
+    // ========== 角色系統 ==========
+    var CHARACTERS = [
+      { id: 'xiaomei', name: '小美', color: '#FF6B6B', shape: 'circle', emoji: '👧' },
+      { id: 'laobo', name: '老伯', color: '#4ECDC4', shape: 'square', emoji: '👴' },
+      { id: 'furen', name: '夫人', color: '#95E1D3', shape: 'triangle', emoji: '👩' },
+      { id: 'shalong', name: '沙龍', color: '#F38181', shape: 'diamond', emoji: '💼' },
+      { id: 'jinbei', name: '金貝', color: '#FFD93D', shape: 'circle', emoji: '💰' },
+      { id: 'wumi', name: '烏咪', color: '#6C5CE7', shape: 'square', emoji: '🐱' },
+      { id: 'renta', name: '忍太', color: '#A8E6CF', shape: 'triangle', emoji: '🥷' },
+      { id: 'laoqian', name: '老千', color: '#FF8B94', shape: 'diamond', emoji: '🎲' },
+      { id: 'danni', name: '丹尼', color: '#FFD3B6', shape: 'circle', emoji: '👦' },
+      { id: 'baozang', name: '寶藏', color: '#FFAAA5', shape: 'square', emoji: '🗺️' },
+      { id: 'wumei', name: '舞美', color: '#FF8C94', shape: 'triangle', emoji: '💃' },
+      { id: 'shala', name: '莎拉', color: '#A8D8EA', shape: 'diamond', emoji: '👸' },
+      { id: 'laina', name: '萊娜', color: '#FFDAC1', shape: 'circle', emoji: '🌸' },
+      { id: 'tangtang', name: '糖糖', color: '#FFB7B2', shape: 'square', emoji: '🍬' },
+      { id: 'xiaoyao', name: '逍遙', color: '#B4F8C8', shape: 'triangle', emoji: '⚔️' },
+      { id: 'linger', name: '靈兒', color: '#A0E7E5', shape: 'diamond', emoji: '🦋' },
+      { id: 'yueru', name: '月如', color: '#FBE7C6', shape: 'circle', emoji: '🌙' },
+      { id: 'anu', name: '阿奴', color: '#FFAEBC', shape: 'square', emoji: '🌺' },
+      { id: 'jingtian', name: '景天', color: '#A0C4FF', shape: 'triangle', emoji: '🗡️' },
+      { id: 'xia', name: '瑕', color: '#BDB2FF', shape: 'diamond', emoji: '✨' },
+      { id: 'xiahou', name: '夏侯', color: '#FFFFB5', shape: 'circle', emoji: '🛡️' }
+    ];
+    var selectedPlayers = [];
+    var gamePlayerCount = 4;
+    
+var MAPS = {
+      taiwan: {
+        name: "台灣",
+        properties: [
+          {idx:1, name:"九份老街", price: 80000, group:"brown"},
+          {idx:3, name:"淡水漁人碼頭", price: 80000, group:"brown"},
+          {idx:6, name:"陽明山", price: 120000, group:"lightblue"},
+          {idx:8, name:"北投溫泉", price: 120000, group:"lightblue"},
+          {idx:9, name:"野柳地質公園", price: 160000, group:"lightblue"},
+          {idx:11, name:"士林夜市", price: 200000, group:"pink"},
+          {idx:13, name:"台北101", price: 200000, group:"pink"},
+          {idx:14, name:"中正紀念堂", price: 240000, group:"pink"},
+          {idx:16, name:"日月潭", price: 280000, group:"orange"},
+          {idx:18, name:"阿里山", price: 280000, group:"orange"},
+          {idx:19, name:"溪頭", price: 320000, group:"orange"},
+          {idx:21, name:"太魯閣", price: 360000, group:"red"},
+          {idx:23, name:"清境農場", price: 360000, group:"red"},
+          {idx:24, name:"合歡山", price: 400000, group:"red"},
+          {idx:26, name:"墾丁", price: 440000, group:"yellow"},
+          {idx:27, name:"鵝鑾鼻燈塔", price: 440000, group:"yellow"},
+          {idx:29, name:"貓鼻頭", price: 480000, group:"yellow"},
+          {idx:31, name:"綠島", price: 520000, group:"green"},
+          {idx:32, name:"蘭嶼", price: 520000, group:"green"},
+          {idx:34, name:"小琉球", price: 560000, group:"green"},
+          {idx:37, name:"澎湖", price: 640000, group:"darkblue"},
+          {idx:39, name:"馬祖", price: 800000, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"台北車站"},
+          {idx:15, name:"台中車站"},
+          {idx:25, name:"高雄車站"},
+          {idx:35, name:"台南車站"}
+        ],
+        utilities: [
+          {idx:12, name:"台灣自來水公司"},
+          {idx:28, name:"台灣電力公司"}
+        ]
+      },
+      japan: {
+        name: "日本",
+        properties: [
+          {idx:1, name:"淺草寺", price: 80000, group:"brown"},
+          {idx:3, name:"秋葉原", price: 80000, group:"brown"},
+          {idx:6, name:"富士山", price: 120000, group:"lightblue"},
+          {idx:8, name:"箱根溫泉", price: 120000, group:"lightblue"},
+          {idx:9, name:"鎌倉大佛", price: 160000, group:"lightblue"},
+          {idx:11, name:"東京鐵塔", price: 200000, group:"pink"},
+          {idx:13, name:"晴空塔", price: 200000, group:"pink"},
+          {idx:14, name:"明治神宮", price: 240000, group:"pink"},
+          {idx:16, name:"大阪城", price: 280000, group:"orange"},
+          {idx:18, name:"道頓堀", price: 280000, group:"orange"},
+          {idx:19, name:"心齋橋", price: 320000, group:"orange"},
+          {idx:21, name:"清水寺", price: 360000, group:"red"},
+          {idx:23, name:"金閣寺", price: 360000, group:"red"},
+          {idx:24, name:"伏見稻荷", price: 400000, group:"red"},
+          {idx:26, name:"嚴島神社", price: 440000, group:"yellow"},
+          {idx:27, name:"廣島和平公園", price: 440000, group:"yellow"},
+          {idx:29, name:"姬路城", price: 480000, group:"yellow"},
+          {idx:31, name:"札幌雪祭", price: 520000, group:"green"},
+          {idx:32, name:"小樽運河", price: 520000, group:"green"},
+          {idx:34, name:"函館夜景", price: 560000, group:"green"},
+          {idx:37, name:"沖繩美麗海", price: 640000, group:"darkblue"},
+          {idx:39, name:"首里城", price: 800000, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"東京站"},
+          {idx:15, name:"大阪站"},
+          {idx:25, name:"京都站"},
+          {idx:35, name:"名古屋站"}
+        ],
+        utilities: [
+          {idx:12, name:"東京電力"},
+          {idx:28, name:"關西電力"}
+        ]
+      },
+      usa: {
+        name: "美國",
+        properties: [
+          {idx:1, name:"自由女神像", price: 80000, group:"brown"},
+          {idx:3, name:"時代廣場", price: 80000, group:"brown"},
+          {idx:6, name:"大峽谷", price: 120000, group:"lightblue"},
+          {idx:8, name:"黃石公園", price: 120000, group:"lightblue"},
+          {idx:9, name:"優勝美地", price: 160000, group:"lightblue"},
+          {idx:11, name:"好萊塢", price: 200000, group:"pink"},
+          {idx:13, name:"迪士尼樂園", price: 200000, group:"pink"},
+          {idx:14, name:"環球影城", price: 240000, group:"pink"},
+          {idx:16, name:"金門大橋", price: 280000, group:"orange"},
+          {idx:18, name:"漁人碼頭", price: 280000, group:"orange"},
+          {idx:19, name:"矽谷", price: 320000, group:"orange"},
+          {idx:21, name:"拉斯維加斯", price: 360000, group:"red"},
+          {idx:23, name:"大都會", price: 360000, group:"red"},
+          {idx:24, name:"胡佛水壩", price: 400000, group:"red"},
+          {idx:26, name:"白宮", price: 440000, group:"yellow"},
+          {idx:27, name:"林肯紀念堂", price: 440000, group:"yellow"},
+          {idx:29, name:"國會大廈", price: 480000, group:"yellow"},
+          {idx:31, name:"邁阿密海灘", price: 520000, group:"green"},
+          {idx:32, name:"奧蘭多", price: 520000, group:"green"},
+          {idx:34, name:"太空中心", price: 560000, group:"green"},
+          {idx:37, name:"芝加哥", price: 640000, group:"darkblue"},
+          {idx:39, name:"西雅圖", price: 800000, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"中央車站"},
+          {idx:15, name:"聯合車站"},
+          {idx:25, name:"賓州車站"},
+          {idx:35, name:"南站"}
+        ],
+        utilities: [
+          {idx:12, name:"水務公司"},
+          {idx:28, name:"電力公司"}
+        ]
+      },
+      hongkong: {
+        name: "香港",
+        properties: [
+          {idx:1, name:"旺角", price: 80000, group:"brown"},
+          {idx:3, name:"油麻地", price: 80000, group:"brown"},
+          {idx:6, name:"太平山", price: 120000, group:"lightblue"},
+          {idx:8, name:"淺水灣", price: 120000, group:"lightblue"},
+          {idx:9, name:"赤柱", price: 160000, group:"lightblue"},
+          {idx:11, name:"中環", price: 200000, group:"pink"},
+          {idx:13, name:"金鐘", price: 200000, group:"pink"},
+          {idx:14, name:"銅鑼灣", price: 240000, group:"pink"},
+          {idx:16, name:"尖沙咀", price: 280000, group:"orange"},
+          {idx:18, name:"海港城", price: 280000, group:"orange"},
+          {idx:19, name:"星光大道", price: 320000, group:"orange"},
+          {idx:21, name:"迪士尼樂園", price: 360000, group:"red"},
+          {idx:23, name:"海洋公園", price: 360000, group:"red"},
+          {idx:24, name:"昂坪360", price: 400000, group:"red"},
+          {idx:26, name:"維多利亞港", price: 440000, group:"yellow"},
+          {idx:27, name:"天星小輪", price: 440000, group:"yellow"},
+          {idx:29, name:"蘭桂坊", price: 480000, group:"yellow"},
+          {idx:31, name:"西貢", price: 520000, group:"green"},
+          {idx:32, name:"大嶼山", price: 520000, group:"green"},
+          {idx:34, name:"南丫島", price: 560000, group:"green"},
+          {idx:37, name:"IFC國際金融中心", price: 640000, group:"darkblue"},
+          {idx:39, name:"ICC環球貿易廣場", price: 800000, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"中環站"},
+          {idx:15, name:"金鐘站"},
+          {idx:25, name:"尖沙咀站"},
+          {idx:35, name:"旺角站"}
+        ],
+        utilities: [
+          {idx:12, name:"中華電力"},
+          {idx:28, name:"港燈"}
+        ]
+      },
+      vietnam: {
+        name: "越南",
+        properties: [
+          {idx:1, name:"三十六行街", price: 80000, group:"brown"},
+          {idx:3, name:"還劍湖", price: 80000, group:"brown"},
+          {idx:6, name:"下龍灣", price: 120000, group:"lightblue"},
+          {idx:8, name:"寧平", price: 120000, group:"lightblue"},
+          {idx:9, name:"沙壩", price: 160000, group:"lightblue"},
+          {idx:11, name:"胡志明市", price: 200000, group:"pink"},
+          {idx:13, name:"濱城市場", price: 200000, group:"pink"},
+          {idx:14, name:"統一宮", price: 240000, group:"pink"},
+          {idx:16, name:"會安古鎮", price: 280000, group:"orange"},
+          {idx:18, name:"峴港", price: 280000, group:"orange"},
+          {idx:19, name:"巴拿山", price: 320000, group:"orange"},
+          {idx:21, name:"順化皇城", price: 360000, group:"red"},
+          {idx:23, name:"香江", price: 360000, group:"red"},
+          {idx:24, name:"天姥寺", price: 400000, group:"red"},
+          {idx:26, name:"芽莊海灘", price: 440000, group:"yellow"},
+          {idx:27, name:"珍珠島", price: 440000, group:"yellow"},
+          {idx:29, name:"婆那加占婆塔", price: 480000, group:"yellow"},
+          {idx:31, name:"美奈", price: 520000, group:"green"},
+          {idx:32, name:"大叻", price: 520000, group:"green"},
+          {idx:34, name:"富國島", price: 560000, group:"green"},
+          {idx:37, name:"湄公河", price: 640000, group:"darkblue"},
+          {idx:39, name:"芹苴水上市場", price: 800000, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"河內站"},
+          {idx:15, name:"峴港站"},
+          {idx:25, name:"胡志明站"},
+          {idx:35, name:"芽莊站"}
+        ],
+        utilities: [
+          {idx:12, name:"越南電力"},
+          {idx:28, name:"西貢水務"}
+        ]
+      },
+      korea: {
+        name: "韓國",
+        properties: [
+          {idx:1, name:"明洞", price: 80000, group:"brown"},
+          {idx:3, name:"東大門", price: 80000, group:"brown"},
+          {idx:6, name:"南山塔", price: 120000, group:"lightblue"},
+          {idx:8, name:"北村韓屋村", price: 120000, group:"lightblue"},
+          {idx:9, name:"景福宮", price: 160000, group:"lightblue"},
+          {idx:11, name:"江南區", price: 200000, group:"pink"},
+          {idx:13, name:"明洞聖堂", price: 200000, group:"pink"},
+          {idx:14, name:"汝矣島", price: 240000, group:"pink"},
+          {idx:16, name:"釜山海水浴場", price: 280000, group:"orange"},
+          {idx:18, name:"海雲台", price: 280000, group:"orange"},
+          {idx:19, name:"太宗台", price: 320000, group:"orange"},
+          {idx:21, name:"慈照寺", price: 360000, group:"red"},
+          {idx:23, name:"不國寺", price: 360000, group:"red"},
+          {idx:24, name:"石窩庫廟", price: 400000, group:"red"},
+          {idx:26, name:"濟州島", price: 440000, group:"yellow"},
+          {idx:27, name:"城山日出峰", price: 440000, group:"yellow"},
+          {idx:29, name:"萬丈窩", price: 480000, group:"yellow"},
+          {idx:31, name:"南怡島", price: 520000, group:"green"},
+          {idx:32, name:"海雲台", price: 520000, group:"green"},
+          {idx:34, name:"白頭山", price: 560000, group:"green"},
+          {idx:37, name:"樂天世界塔", price: 640000, group:"darkblue"},
+          {idx:39, name:"首爾天空公園", price: 800000, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"首爾站"},
+          {idx:15, name:"釜山站"},
+          {idx:25, name:"慶州站"},
+          {idx:35, name:"大邱站"}
+        ],
+        utilities: [
+          {idx:12, name:"韓國電力公社"},
+          {idx:28, name:"首爾水道"}
+        ]
+      },
+      italy: {
+        name: "義大利",
+        properties: [
+          {idx:1, name:"羅馬競技場", price: 80000, group:"brown"},
+          {idx:3, name:"諾維噴泉", price: 80000, group:"brown"},
+          {idx:6, name:"比薩斜塔", price: 120000, group:"lightblue"},
+          {idx:8, name:"佛羅倫斯大教堂", price: 120000, group:"lightblue"},
+          {idx:9, name:"烏菲茲美術館", price: 160000, group:"lightblue"},
+          {idx:11, name:"威尼斯大運河", price: 200000, group:"pink"},
+          {idx:13, name:"聖馬可廣場", price: 200000, group:"pink"},
+          {idx:14, name:"雷雅托橋", price: 240000, group:"pink"},
+          {idx:16, name:"米蘭大教堂", price: 280000, group:"orange"},
+          {idx:18, name:"最後的晚餐", price: 280000, group:"orange"},
+          {idx:19, name:"埃馬紐埃二世長廊", price: 320000, group:"orange"},
+          {idx:21, name:"龐培古城", price: 360000, group:"red"},
+          {idx:23, name:"阿瑪爾菲海岸", price: 360000, group:"red"},
+          {idx:24, name:"聖吉米尼亞諾廣場", price: 400000, group:"red"},
+          {idx:26, name:"梵蒂岡博物館", price: 440000, group:"yellow"},
+          {idx:27, name:"西斯廷教堂", price: 440000, group:"yellow"},
+          {idx:29, name:"聖彼得大教堂", price: 480000, group:"yellow"},
+          {idx:31, name:"五渔村", price: 520000, group:"green"},
+          {idx:32, name:"多洛米蒂山", price: 520000, group:"green"},
+          {idx:34, name:"卡布里島", price: 560000, group:"green"},
+          {idx:37, name:"米蘭斯卡拉大劇院", price: 640000, group:"darkblue"},
+          {idx:39, name:"圣母百花大教堂", price: 800000, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"羅馬中央站"},
+          {idx:15, name:"佛羅倫斯站"},
+          {idx:25, name:"米蘭站"},
+          {idx:35, name:"威尼斯站"}
+        ],
+        utilities: [
+          {idx:12, name:"義大利電力"},
+          {idx:28, name:"羅馬水道"}
+        ]
+      },
+      netherlands: {
+        name: "荷蘭",
+        properties: [
+          {idx:1, name:"水壩廣場", price: 80000, group:"brown"},
+          {idx:3, name:"紅燈區", price: 80000, group:"brown"},
+          {idx:6, name:"桑斯風車村", price: 120000, group:"lightblue"},
+          {idx:8, name:"庫勒穆勒風車", price: 120000, group:"lightblue"},
+          {idx:9, name:"馬肯橋", price: 160000, group:"lightblue"},
+          {idx:11, name:"梵高博物館", price: 200000, group:"pink"},
+          {idx:13, name:"國立博物館", price: 200000, group:"pink"},
+          {idx:14, name:"安妮之家", price: 240000, group:"pink"},
+          {idx:16, name:"鹿特丹港", price: 280000, group:"orange"},
+          {idx:18, name:"小孩堤防", price: 280000, group:"orange"},
+          {idx:19, name:"歐洲港", price: 320000, group:"orange"},
+          {idx:21, name:"庫勒穆勒花園", price: 360000, group:"red"},
+          {idx:23, name:"阿姆斯特丹運河", price: 360000, group:"red"},
+          {idx:24, name:"羊角村", price: 400000, group:"red"},
+          {idx:26, name:"海牙國際法庭", price: 440000, group:"yellow"},
+          {idx:27, name:"平和宮", price: 440000, group:"yellow"},
+          {idx:29, name:"馬德羅丹大壩", price: 480000, group:"yellow"},
+          {idx:31, name:"阿姆斯特丹水壩", price: 520000, group:"green"},
+          {idx:32, name:"北海漁村", price: 520000, group:"green"},
+          {idx:34, name:"三角洲", price: 560000, group:"green"},
+          {idx:37, name:"阿姆斯特丹競技場", price: 640000, group:"darkblue"},
+          {idx:39, name:"阿姆斯特丹中央車站", price: 800000, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"阿姆斯特丹站"},
+          {idx:15, name:"鹿特丹站"},
+          {idx:25, name:"海牙站"},
+          {idx:35, name:"烏得勒支站"}
+        ],
+        utilities: [
+          {idx:12, name:"荷蘭電力"},
+          {idx:28, name:"阿姆斯特丹水務"}
+        ]
+      },
+      russia: {
+        name: "俄羅斯",
+        properties: [
+          {idx:1, name:"紅場", price: 80000, group:"brown"},
+          {idx:3, name:"克里姆林宮", price: 80000, group:"brown"},
+          {idx:6, name:"聖瓦西里大教堂", price: 120000, group:"lightblue"},
+          {idx:8, name:"冬宮", price: 120000, group:"lightblue"},
+          {idx:9, name:"夏宮", price: 160000, group:"lightblue"},
+          {idx:11, name:"聖彼得堡要塞", price: 200000, group:"pink"},
+          {idx:13, name:"滔瓦河", price: 200000, group:"pink"},
+          {idx:14, name:"滔瓦河遊船", price: 240000, group:"pink"},
+          {idx:16, name:"貝加爾湖", price: 280000, group:"orange"},
+          {idx:18, name:"西伯利亞鐵路", price: 280000, group:"orange"},
+          {idx:19, name:"伊爾庫茨克", price: 320000, group:"orange"},
+          {idx:21, name:"金環", price: 360000, group:"red"},
+          {idx:23, name:"蘇茲達爾", price: 360000, group:"red"},
+          {idx:24, name:"喇嘉山", price: 400000, group:"red"},
+          {idx:26, name:"索契冬宮會", price: 440000, group:"yellow"},
+          {idx:27, name:"黑海度假村", price: 440000, group:"yellow"},
+          {idx:29, name:"高加索山脈", price: 480000, group:"yellow"},
+          {idx:31, name:"堡壘島", price: 520000, group:"green"},
+          {idx:32, name:"勘察加半島", price: 520000, group:"green"},
+          {idx:34, name:"摩爾曼斯克", price: 560000, group:"green"},
+          {idx:37, name:"莫斯科大學", price: 640000, group:"darkblue"},
+          {idx:39, name:"莫斯科地鐵", price: 800000, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"莫斯科站"},
+          {idx:15, name:"聖彼得堡站"},
+          {idx:25, name:"葉卡捷琳堡站"},
+          {idx:35, name:"索契站"}
+        ],
+        utilities: [
+          {idx:12, name:"俄羅斯電力"},
+          {idx:28, name:"莫斯科水務"}
+        ]
+      },
+      galaxy: {
+        name: "銀河系",
+        properties: [
+          {idx:1, name:"月球基地", price: 80000, group:"brown"},
+          {idx:3, name:"火星基地", price: 80000, group:"brown"},
+          {idx:6, name:"木星衛星", price: 120000, group:"lightblue"},
+          {idx:8, name:"土星環", price: 120000, group:"lightblue"},
+          {idx:9, name:"天王星", price: 160000, group:"lightblue"},
+          {idx:11, name:"海王星", price: 200000, group:"pink"},
+          {idx:13, name:"冥王星", price: 200000, group:"pink"},
+          {idx:14, name:"柯伊伯帶", price: 240000, group:"pink"},
+          {idx:16, name:"仙女座星雲", price: 280000, group:"orange"},
+          {idx:18, name:"獵戶座星雲", price: 280000, group:"orange"},
+          {idx:19, name:"天鹰星雲", price: 320000, group:"orange"},
+          {idx:21, name:"猩戶座星系", price: 360000, group:"red"},
+          {idx:23, name:"仙女座星系", price: 360000, group:"red"},
+          {idx:24, name:"三角座星系", price: 400000, group:"red"},
+          {idx:26, name:"猩夫座星雲", price: 440000, group:"yellow"},
+          {idx:27, name:"馬頭星雲", price: 440000, group:"yellow"},
+          {idx:29, name:"鷹狀星雲", price: 480000, group:"yellow"},
+          {idx:31, name:"猩戶座中心", price: 520000, group:"green"},
+          {idx:32, name:"黑洞區域", price: 520000, group:"green"},
+          {idx:34, name:"脆星雲", price: 560000, group:"green"},
+          {idx:37, name:"仙女座A", price: 640000, group:"darkblue"},
+          {idx:39, name:"銀河中心", price: 800000, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"地球軸心站"},
+          {idx:15, name:"火星中繼站"},
+          {idx:25, name:"木星軸心站"},
+          {idx:35, name:"土星中繼站"}
+        ],
+        utilities: [
+          {idx:12, name:"太陽能電網"},
+          {idx:28, name:"氮氣採集站"}
+        ]
+      },
+      philippines: {
+        name: "菲律賓",
+        properties: [
+          {idx:1, name:"馬尼拉灣", price: 80000, group:"brown"},
+          {idx:3, name:"黎剎公園", price: 80000, group:"brown"},
+          {idx:6, name:"長灘島", price: 120000, group:"lightblue"},
+          {idx:8, name:"巧克力山", price: 120000, group:"lightblue"},
+          {idx:9, name:"薄荷島", price: 160000, group:"lightblue"},
+          {idx:11, name:"宿霧", price: 200000, group:"pink"},
+          {idx:13, name:"麥哲倫十字架", price: 200000, group:"pink"},
+          {idx:14, name:"聖嬰教堂", price: 240000, group:"pink"},
+          {idx:16, name:"碧瑤", price: 280000, group:"orange"},
+          {idx:18, name:"巴拿威梯田", price: 280000, group:"orange"},
+          {idx:19, name:"馬榮火山", price: 320000, group:"orange"},
+          {idx:21, name:"科隆島", price: 360000, group:"red"},
+          {idx:23, name:"愛妮島", price: 360000, group:"red"},
+          {idx:24, name:"公主港地下河", price: 400000, group:"red"},
+          {idx:26, name:"薄荷島眼鏡猴", price: 440000, group:"yellow"},
+          {idx:27, name:"杜馬蓋地", price: 440000, group:"yellow"},
+          {idx:29, name:"錫基霍爾島", price: 480000, group:"yellow"},
+          {idx:31, name:"維甘古城", price: 520000, group:"green"},
+          {idx:32, name:"伊富高", price: 520000, group:"green"},
+          {idx:34, name:"塔阿爾火山", price: 560000, group:"green"},
+          {idx:37, name:"馬尼拉大教堂", price: 640000, group:"darkblue"},
+          {idx:39, name:"SM亞洲購物中心", price: 800000, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"馬尼拉站"},
+          {idx:15, name:"宿霧站"},
+          {idx:25, name:"達沃站"},
+          {idx:35, name:"碧瑤站"}
+        ],
+        utilities: [
+          {idx:12, name:"馬尼拉電力"},
+          {idx:28, name:"菲律賓水務"}
+        ]
+      },
+      thailand: {
+        name: "泰國",
+        properties: [
+          {idx:1, name:"考山路", price: 80000, group:"brown"},
+          {idx:3, name:"臥佛寺", price: 80000, group:"brown"},
+          {idx:6, name:"大皇宮", price: 120000, group:"lightblue"},
+          {idx:8, name:"玉佛寺", price: 120000, group:"lightblue"},
+          {idx:9, name:"鄭王廟", price: 160000, group:"lightblue"},
+          {idx:11, name:"暹羅廣場", price: 200000, group:"pink"},
+          {idx:13, name:"四面佛", price: 200000, group:"pink"},
+          {idx:14, name:"曼谷河濱夜市", price: 240000, group:"pink"},
+          {idx:16, name:"普吉島", price: 280000, group:"orange"},
+          {idx:18, name:"芭東海灘", price: 280000, group:"orange"},
+          {idx:19, name:"攀牙灣", price: 320000, group:"orange"},
+          {idx:21, name:"清邁古城", price: 360000, group:"red"},
+          {idx:23, name:"素帖寺", price: 360000, group:"red"},
+          {idx:24, name:"清萊白廟", price: 400000, group:"red"},
+          {idx:26, name:"芭達雅", price: 440000, group:"yellow"},
+          {idx:27, name:"珊瑚島", price: 440000, group:"yellow"},
+          {idx:29, name:"真理寺", price: 480000, group:"yellow"},
+          {idx:31, name:"水上市場", price: 520000, group:"green"},
+          {idx:32, name:"美功鐵道市場", price: 520000, group:"green"},
+          {idx:34, name:"桂河大橋", price: 560000, group:"green"},
+          {idx:37, name:"蘇美島", price: 640000, group:"darkblue"},
+          {idx:39, name:"喀比", price: 800000, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"曼谷站"},
+          {idx:15, name:"清邁站"},
+          {idx:25, name:"普吉站"},
+          {idx:35, name:"芭達雅站"}
+        ],
+        utilities: [
+          {idx:12, name:"泰國電力局"},
+          {idx:28, name:"曼谷水務"}
+        ]
+      },
+      singapore: {
+        name: "新加坡",
+        properties: [
+          {idx:1, name:"牛車水", price: 80000, group:"brown"},
+          {idx:3, name:"小印度", price: 80000, group:"brown"},
+          {idx:6, name:"魚尾獅公園", price: 120000, group:"lightblue"},
+          {idx:8, name:"濱海灣花園", price: 120000, group:"lightblue"},
+          {idx:9, name:"超級樹", price: 160000, group:"lightblue"},
+          {idx:11, name:"濱海灣金沙", price: 200000, group:"pink"},
+          {idx:13, name:"金沙空中花園", price: 200000, group:"pink"},
+          {idx:14, name:"藝術科學博物館", price: 240000, group:"pink"},
+          {idx:16, name:"聖淘沙", price: 280000, group:"orange"},
+          {idx:18, name:"環球影城", price: 280000, group:"orange"},
+          {idx:19, name:"S.E.A.海洋館", price: 320000, group:"orange"},
+          {idx:21, name:"烏節路", price: 360000, group:"red"},
+          {idx:23, name:"ION購物中心", price: 360000, group:"red"},
+          {idx:24, name:"義安城", price: 400000, group:"red"},
+          {idx:26, name:"克拉碼頭", price: 440000, group:"yellow"},
+          {idx:27, name:"駁船碼頭", price: 440000, group:"yellow"},
+          {idx:29, name:"萊佛士酒店", price: 480000, group:"yellow"},
+          {idx:31, name:"夜間動物園", price: 520000, group:"green"},
+          {idx:32, name:"新加坡動物園", price: 520000, group:"green"},
+          {idx:34, name:"河川生態園", price: 560000, group:"green"},
+          {idx:37, name:"濱海藝術中心", price: 640000, group:"darkblue"},
+          {idx:39, name:"新加坡摩天輪", price: 800000, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"市政廳站"},
+          {idx:15, name:"烏節站"},
+          {idx:25, name:"濱海灣站"},
+          {idx:35, name:"樟宜機場站"}
+        ],
+        utilities: [
+          {idx:12, name:"新能源集團"},
+          {idx:28, name:"公用事業局"}
+        ]
+      },
+      malaysia: {
+        name: "馬來西亞",
+        properties: [
+          {idx:1, name:"獨立廣場", price: 80000, group:"brown"},
+          {idx:3, name:"茨廠街", price: 80000, group:"brown"},
+          {idx:6, name:"雙子塔", price: 120000, group:"lightblue"},
+          {idx:8, name:"吉隆坡塔", price: 120000, group:"lightblue"},
+          {idx:9, name:"黑風洞", price: 160000, group:"lightblue"},
+          {idx:11, name:"武吉免登", price: 200000, group:"pink"},
+          {idx:13, name:"阿羅街", price: 200000, group:"pink"},
+          {idx:14, name:"中央藝術坊", price: 240000, group:"pink"},
+          {idx:16, name:"檳城喬治市", price: 280000, group:"orange"},
+          {idx:18, name:"檳城極樂寺", price: 280000, group:"orange"},
+          {idx:19, name:"升旗山", price: 320000, group:"orange"},
+          {idx:21, name:"馬六甲", price: 360000, group:"red"},
+          {idx:23, name:"紅屋", price: 360000, group:"red"},
+          {idx:24, name:"雞場街", price: 400000, group:"red"},
+          {idx:26, name:"蘭卡威", price: 440000, group:"yellow"},
+          {idx:27, name:"天空之橋", price: 440000, group:"yellow"},
+          {idx:29, name:"巨鷹廣場", price: 480000, group:"yellow"},
+          {idx:31, name:"雲頂高原", price: 520000, group:"green"},
+          {idx:32, name:"金馬崙高原", price: 520000, group:"green"},
+          {idx:34, name:"沙巴神山", price: 560000, group:"green"},
+          {idx:37, name:"沙巴仙本那", price: 640000, group:"darkblue"},
+          {idx:39, name:"砂拉越姆魯洞穴", price: 800000, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"吉隆坡中央站"},
+          {idx:15, name:"檳城站"},
+          {idx:25, name:"新山站"},
+          {idx:35, name:"怡保站"}
+        ],
+        utilities: [
+          {idx:12, name:"國家能源"},
+          {idx:28, name:"雪蘭莪水務"}
+        ]
+      },
+      indonesia: {
+        name: "印尼",
+        properties: [
+          {idx:1, name:"獨立廣場", price: 80000, group:"brown"},
+          {idx:3, name:"國家紀念碑", price: 80000, group:"brown"},
+          {idx:6, name:"峇里島", price: 120000, group:"lightblue"},
+          {idx:8, name:"烏布梯田", price: 120000, group:"lightblue"},
+          {idx:9, name:"海神廟", price: 160000, group:"lightblue"},
+          {idx:11, name:"庫塔海灘", price: 200000, group:"pink"},
+          {idx:13, name:"金巴蘭海灘", price: 200000, group:"pink"},
+          {idx:14, name:"烏魯瓦圖廟", price: 240000, group:"pink"},
+          {idx:16, name:"婆羅浮屠", price: 280000, group:"orange"},
+          {idx:18, name:"普蘭巴南", price: 280000, group:"orange"},
+          {idx:19, name:"日惹蘇丹王宮", price: 320000, group:"orange"},
+          {idx:21, name:"龍目島", price: 360000, group:"red"},
+          {idx:23, name:"吉利群島", price: 360000, group:"red"},
+          {idx:24, name:"林賈尼火山", price: 400000, group:"red"},
+          {idx:26, name:"科莫多島", price: 440000, group:"yellow"},
+          {idx:27, name:"科莫多龍", price: 440000, group:"yellow"},
+          {idx:29, name:"粉紅沙灘", price: 480000, group:"yellow"},
+          {idx:31, name:"布羅莫火山", price: 520000, group:"green"},
+          {idx:32, name:"伊真火山", price: 520000, group:"green"},
+          {idx:34, name:"多巴湖", price: 560000, group:"green"},
+          {idx:37, name:"雅加達老城", price: 640000, group:"darkblue"},
+          {idx:39, name:"千島群島", price: 800000, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"雅加達站"},
+          {idx:15, name:"日惹站"},
+          {idx:25, name:"泗水站"},
+          {idx:35, name:"萬隆站"}
+        ],
+        utilities: [
+          {idx:12, name:"印尼國家電力"},
+          {idx:28, name:"雅加達水務"}
+        ]
+      },
+      australia: {
+        name: "澳洲",
+        properties: [
+          {idx:1, name:"環形碼頭", price: 80000, group:"brown"},
+          {idx:3, name:"岩石區", price: 80000, group:"brown"},
+          {idx:6, name:"雪梨歌劇院", price: 120000, group:"lightblue"},
+          {idx:8, name:"雪梨港灣大橋", price: 120000, group:"lightblue"},
+          {idx:9, name:"邦迪海灘", price: 160000, group:"lightblue"},
+          {idx:11, name:"達令港", price: 200000, group:"pink"},
+          {idx:13, name:"雪梨塔", price: 200000, group:"pink"},
+          {idx:14, name:"皇家植物園", price: 240000, group:"pink"},
+          {idx:16, name:"大堡礁", price: 280000, group:"orange"},
+          {idx:18, name:"聖靈群島", price: 280000, group:"orange"},
+          {idx:19, name:"白天堂海灘", price: 320000, group:"orange"},
+          {idx:21, name:"艾爾斯岩", price: 360000, group:"red"},
+          {idx:23, name:"卡塔丘塔", price: 360000, group:"red"},
+          {idx:24, name:"國王峽谷", price: 400000, group:"red"},
+          {idx:26, name:"墨爾本", price: 440000, group:"yellow"},
+          {idx:27, name:"大洋路", price: 440000, group:"yellow"},
+          {idx:29, name:"十二門徒岩", price: 480000, group:"yellow"},
+          {idx:31, name:"黃金海岸", price: 520000, group:"green"},
+          {idx:32, name:"衝浪者天堂", price: 520000, group:"green"},
+          {idx:34, name:"夢幻世界", price: 560000, group:"green"},
+          {idx:37, name:"塔斯馬尼亞", price: 640000, group:"darkblue"},
+          {idx:39, name:"搖籃山", price: 800000, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"中央車站"},
+          {idx:15, name:"墨爾本站"},
+          {idx:25, name:"布里斯本站"},
+          {idx:35, name:"伯斯站"}
+        ],
+        utilities: [
+          {idx:12, name:"澳洲能源"},
+          {idx:28, name:"雪梨水務"}
+        ]
+      },
+      india: {
+        name: "印度",
+        properties: [
+          {idx:1, name:"紅堡", price: 80000, group:"brown"},
+          {idx:3, name:"賈瑪清真寺", price: 80000, group:"brown"},
+          {idx:6, name:"泰姬瑪哈陵", price: 120000, group:"lightblue"},
+          {idx:8, name:"阿格拉堡", price: 120000, group:"lightblue"},
+          {idx:9, name:"法特普爾西格里", price: 160000, group:"lightblue"},
+          {idx:11, name:"印度門", price: 200000, group:"pink"},
+          {idx:13, name:"蓮花寺", price: 200000, group:"pink"},
+          {idx:14, name:"顧特卜塔", price: 240000, group:"pink"},
+          {idx:16, name:"恆河", price: 280000, group:"orange"},
+          {idx:18, name:"瓦拉納西", price: 280000, group:"orange"},
+          {idx:19, name:"鹿野苑", price: 320000, group:"orange"},
+          {idx:21, name:"齋浦爾城市宮殿", price: 360000, group:"red"},
+          {idx:23, name:"風之宮殿", price: 360000, group:"red"},
+          {idx:24, name:"琥珀堡", price: 400000, group:"red"},
+          {idx:26, name:"果阿海灘", price: 440000, group:"yellow"},
+          {idx:27, name:"舊果阿教堂", price: 440000, group:"yellow"},
+          {idx:29, name:"阿蘭波爾海灘", price: 480000, group:"yellow"},
+          {idx:31, name:"孟買印度門", price: 520000, group:"green"},
+          {idx:32, name:"象島石窟", price: 520000, group:"green"},
+          {idx:34, name:"寶萊塢", price: 560000, group:"green"},
+          {idx:37, name:"克久拉霍", price: 640000, group:"darkblue"},
+          {idx:39, name:"埃洛拉石窟", price: 800000, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"新德里站"},
+          {idx:15, name:"孟買站"},
+          {idx:25, name:"加爾各答站"},
+          {idx:35, name:"欽奈站"}
+        ],
+        utilities: [
+          {idx:12, name:"印度電力"},
+          {idx:28, name:"德里水務"}
+        ]
+      },
+      uae: {
+        name: "阿聯酋",
+        properties: [
+          {idx:1, name:"杜拜購物中心", price: 80000, group:"brown"},
+          {idx:3, name:"黃金市集", price: 80000, group:"brown"},
+          {idx:6, name:"哈里發塔", price: 120000, group:"lightblue"},
+          {idx:8, name:"杜拜噴泉", price: 120000, group:"lightblue"},
+          {idx:9, name:"杜拜水族館", price: 160000, group:"lightblue"},
+          {idx:11, name:"帆船酒店", price: 200000, group:"pink"},
+          {idx:13, name:"朱美拉海灘", price: 200000, group:"pink"},
+          {idx:14, name:"瘋狂維迪水上樂園", price: 240000, group:"pink"},
+          {idx:16, name:"棕櫚島", price: 280000, group:"orange"},
+          {idx:18, name:"亞特蘭提斯酒店", price: 280000, group:"orange"},
+          {idx:19, name:"失落的空間水族館", price: 320000, group:"orange"},
+          {idx:21, name:"杜拜奇蹟花園", price: 360000, group:"red"},
+          {idx:23, name:"全球村", price: 360000, group:"red"},
+          {idx:24, name:"IMG冒險世界", price: 400000, group:"red"},
+          {idx:26, name:"杜拜相框", price: 440000, group:"yellow"},
+          {idx:27, name:"杜拜河", price: 440000, group:"yellow"},
+          {idx:29, name:"阿法迪歷史區", price: 480000, group:"yellow"},
+          {idx:31, name:"阿布達比大清真寺", price: 520000, group:"green"},
+          {idx:32, name:"法拉利世界", price: 520000, group:"green"},
+          {idx:34, name:"盧浮宮阿布達比", price: 560000, group:"green"},
+          {idx:37, name:"阿布達比皇宮酒店", price: 640000, group:"darkblue"},
+          {idx:39, name:"亞斯島", price: 800000, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"杜拜地鐵紅線站"},
+          {idx:15, name:"阿布達比站"},
+          {idx:25, name:"沙迦站"},
+          {idx:35, name:"艾因站"}
+        ],
+        utilities: [
+          {idx:12, name:"杜拜電力水務局"},
+          {idx:28, name:"阿布達比水電局"}
+        ]
+      },
+      uk: {
+        name: "英國",
+        properties: [
+          {idx:1, name:"倫敦塔", price: 80000, group:"brown"},
+          {idx:3, name:"塔橋", price: 80000, group:"brown"},
+          {idx:6, name:"大笨鐘", price: 120000, group:"lightblue"},
+          {idx:8, name:"西敏寺", price: 120000, group:"lightblue"},
+          {idx:9, name:"國會大廈", price: 160000, group:"lightblue"},
+          {idx:11, name:"白金漢宮", price: 200000, group:"pink"},
+          {idx:13, name:"倫敦眼", price: 200000, group:"pink"},
+          {idx:14, name:"特拉法加廣場", price: 240000, group:"pink"},
+          {idx:16, name:"大英博物館", price: 280000, group:"orange"},
+          {idx:18, name:"國家美術館", price: 280000, group:"orange"},
+          {idx:19, name:"泰特現代美術館", price: 320000, group:"orange"},
+          {idx:21, name:"劍橋大學", price: 360000, group:"red"},
+          {idx:23, name:"牛津大學", price: 360000, group:"red"},
+          {idx:24, name:"巴斯羅馬浴場", price: 400000, group:"red"},
+          {idx:26, name:"巨石陣", price: 440000, group:"yellow"},
+          {idx:27, name:"溫莎城堡", price: 440000, group:"yellow"},
+          {idx:29, name:"史特拉福", price: 480000, group:"yellow"},
+          {idx:31, name:"愛丁堡城堡", price: 520000, group:"green"},
+          {idx:32, name:"皇家一英里", price: 520000, group:"green"},
+          {idx:34, name:"荷里路德宮", price: 560000, group:"green"},
+          {idx:37, name:"湖區", price: 640000, group:"darkblue"},
+          {idx:39, name:"約克大教堂", price: 800000, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"國王十字站"},
+          {idx:15, name:"帕丁頓站"},
+          {idx:25, name:"維多利亞站"},
+          {idx:35, name:"滑鐵盧站"}
+        ],
+        utilities: [
+          {idx:12, name:"英國電網"},
+          {idx:28, name:"泰晤士水務"}
+        ]
+      },
+      brazil: {
+        name: "巴西",
+        properties: [
+          {idx:1, name:"科帕卡瓦納海灘", price: 80000, group:"brown"},
+          {idx:3, name:"伊帕內瑪海灘", price: 80000, group:"brown"},
+          {idx:6, name:"基督像", price: 120000, group:"lightblue"},
+          {idx:8, name:"科科瓦多山", price: 120000, group:"lightblue"},
+          {idx:9, name:"麵包山", price: 160000, group:"lightblue"},
+          {idx:11, name:"馬拉卡納體育場", price: 200000, group:"pink"},
+          {idx:13, name:"塞勒隆階梯", price: 200000, group:"pink"},
+          {idx:14, name:"里約大教堂", price: 240000, group:"pink"},
+          {idx:16, name:"伊瓜蘇瀑布", price: 280000, group:"orange"},
+          {idx:18, name:"伊瓜蘇國家公園", price: 280000, group:"orange"},
+          {idx:19, name:"三國交界", price: 320000, group:"orange"},
+          {idx:21, name:"亞馬遜雨林", price: 360000, group:"red"},
+          {idx:23, name:"瑪瑙斯歌劇院", price: 360000, group:"red"},
+          {idx:24, name:"黑河與白河交匯", price: 400000, group:"red"},
+          {idx:26, name:"聖保羅大教堂", price: 440000, group:"yellow"},
+          {idx:27, name:"保利斯塔大道", price: 440000, group:"yellow"},
+          {idx:29, name:"伊比拉布埃拉公園", price: 480000, group:"yellow"},
+          {idx:31, name:"薩爾瓦多佩洛尼奧", price: 520000, group:"green"},
+          {idx:32, name:"巴西利亞大教堂", price: 520000, group:"green"},
+          {idx:34, name:"三權廣場", price: 560000, group:"green"},
+          {idx:37, name:"費爾南多迪諾羅尼亞", price: 640000, group:"darkblue"},
+          {idx:39, name:"潘塔納爾濕地", price: 800000, group:"darkblue"}
+        ],
+        stations: [
+          {idx:5, name:"里約中央站"},
+          {idx:15, name:"聖保羅站"},
+          {idx:25, name:"巴西利亞站"},
+          {idx:35, name:"薩爾瓦多站"}
+        ],
+        utilities: [
+          {idx:12, name:"巴西電力"},
+          {idx:28, name:"里約水務"}
+        ]
+      }
+    };
+    
+    
+    // ========== AI 個性系統 ==========
+    var AI_PERSONALITIES = {
+      aggressive: {
+        name: "激進型",
+        buyThreshold: 0.3,        // 現金比例閾值（低=更激進）
+        buildThreshold: 0.2,      // 建房現金比例閾值
+        jailPayProbability: 0.8,  // 付費出獄概率
+        monopolyBonus: 1.5,       // 壟斷地產價值加成
+        riskTolerance: 0.8        // 風險容忍度
+      },
+      conservative: {
+        name: "保守型",
+        buyThreshold: 0.5,
+        buildThreshold: 0.4,
+        jailPayProbability: 0.3,
+        monopolyBonus: 1.2,
+        riskTolerance: 0.3
+      },
+      balanced: {
+        name: "平衡型",
+        buyThreshold: 0.4,
+        buildThreshold: 0.3,
+        jailPayProbability: 0.5,
+        monopolyBonus: 1.3,
+        riskTolerance: 0.5
+      },
+      speculative: {
+        name: "投機型",
+        buyThreshold: 0.25,
+        buildThreshold: 0.15,
+        jailPayProbability: 0.9,
+        monopolyBonus: 1.8,
+        riskTolerance: 0.9
+      }
+    };
+    
+    
+    // ========== AI 智能評估系統 ==========
+    
+    // 評估地產價值
+    function evaluatePropertyValue(player, tileIdx) {
+      var tile = tiles[tileIdx];
+      if (tile.type !== 'PROPERTY') return 0;
+      
+      var personality = player.aiPersonalityData || AI_PERSONALITIES.balanced;
+      var score = 0;
+      
+      // 基礎價值
+      score += tile.price / 1000;
+      
+      // 檢查是否能形成壟斷
+      var group = tile.group;
+      var groupTiles = tiles.filter(function(t) { 
+        return t.type === 'PROPERTY' && t.group === group; 
+      });
+      var ownedInGroup = groupTiles.filter(function(t) {
+        return player.properties.indexOf(t.idx) >= 0;
+      }).length;
+      var totalInGroup = groupTiles.length;
+      
+      // 壟斷潛力加成
+      if (ownedInGroup === totalInGroup - 1) {
+        // 只差一個就能壟斷
+        score += 50 * personality.monopolyBonus;
+      } else if (ownedInGroup > 0) {
+        // 已經擁有同色組的其他地產
+        score += 20 * (ownedInGroup / totalInGroup);
+      }
+      
+      // 檢查其他玩家是否擁有同色組
+      var othersOwnInGroup = state.players.filter(function(p) {
+        return p.id !== player.id && p.alive;
+      }).some(function(p) {
+        return groupTiles.some(function(t) {
+          return p.properties.indexOf(t.idx) >= 0;
+        });
+      });
+      
+      if (othersOwnInGroup) {
+        // 阻止對手壟斷
+        score += 15;
+      }
+      
+      // 位置價值（後面的地產通常更貴更有價值）
+      score += tileIdx / 4;
+      
+      return score;
     }
+    
+    // 評估是否應該購買
+    function shouldAIBuyProperty(player, tileIdx, price) {
+      var personality = player.aiPersonalityData || AI_PERSONALITIES.balanced;
+      
+      // 檢查現金是否充足
+      var cashRatio = player.cash / 100000; // 相對於初始資金的比例
+      if (cashRatio < personality.buyThreshold) {
+        // 現金不足，但如果是壟斷機會則考慮購買
+        var tile = tiles[tileIdx];
+        if (tile.type === 'PROPERTY') {
+          var group = tile.group;
+          var groupTiles = tiles.filter(function(t) { 
+            return t.type === 'PROPERTY' && t.group === group; 
+          });
+          var ownedInGroup = groupTiles.filter(function(t) {
+            return player.properties.indexOf(t.idx) >= 0;
+          }).length;
+          
+          if (ownedInGroup === groupTiles.length - 1) {
+            // 壟斷機會，即使現金緊張也購買
+            return player.cash >= price * 1.2;
+          }
+        }
+        return false;
+      }
+      
+      // 評估地產價值
+      var value = evaluatePropertyValue(player, tileIdx);
+      
+      // 根據價值和個性決定
+      var threshold = 10 + (1 - personality.riskTolerance) * 20;
+      return value > threshold;
+    }
+    
+    // 評估是否應該升級房屋
+    function shouldAIBuildHouse(player, tileIdx) {
+      var personality = player.aiPersonalityData || AI_PERSONALITIES.balanced;
+      var tile = tiles[tileIdx];
+      
+      if (tile.type !== 'PROPERTY') return false;
+      
+      // 檢查是否擁有壟斷
+      var group = tile.group;
+      var groupTiles = tiles.filter(function(t) { 
+        return t.type === 'PROPERTY' && t.group === group; 
+      });
+      var allOwned = groupTiles.every(function(t) {
+        return player.properties.indexOf(t.idx) >= 0;
+      });
+      
+      if (!allOwned) return false;
+      
+      // 檢查現金
+      var buildCost = HOUSE_COST[group] || 3300;
+      var currentLevel = state.houses[tileIdx] || 0;
+      if (currentLevel >= 5) return false;
+      
+      var cashAfterBuild = player.cash - buildCost;
+      var cashRatio = cashAfterBuild / 100000;
+      
+      if (cashRatio < personality.buildThreshold) return false;
+      
+      // 評估回報率
+      var currentRent = getRent(tileIdx);
+      var nextRent = getRent(tileIdx, currentLevel + 1);
+      var rentIncrease = nextRent - currentRent;
+      var roi = rentIncrease / buildCost;
+      
+      // ROI 高於閾值才建房
+      return roi > (0.1 / personality.riskTolerance);
+    }
+    
+    // 獲取租金（用於評估）
+    function getRent(tileIdx, level) {
+      var tile = tiles[tileIdx];
+      if (tile.type !== 'PROPERTY') return 0;
+      
+      var lv = level !== undefined ? level : (state.houses[tileIdx] || 0);
+      var baseRent = Math.floor(tile.price * 0.1);
+      var rentTable = [baseRent, baseRent*5, baseRent*15, baseRent*45, baseRent*80, baseRent*110];
+      return rentTable[lv] || 0;
+    }
+    
+    // 評估是否應該付費出獄
+    function shouldAIPayJail(player) {
+      var personality = player.aiPersonalityData || AI_PERSONALITIES.balanced;
+      
+      // 檢查現金
+      if (player.cash < JAIL_FEE * 2) return false;
+      
+      // 檢查遊戲階段
+      var totalProperties = tiles.filter(function(t) { 
+        return t.type === 'PROPERTY'; 
+      }).length;
+      var ownedProperties = player.properties.length;
+      var gameProgress = ownedProperties / totalProperties;
+      
+      // 遊戲後期更傾向於付費出獄
+      var payProbability = personality.jailPayProbability * (0.5 + gameProgress);
+      
+      return Math.random() < payProbability;
+    }
+
+    // 為每個 AI 分配個性
+    function assignAIPersonality(player) {
+      var personalities = ['aggressive', 'conservative', 'balanced', 'speculative'];
+      var randomPersonality = personalities[Math.floor(Math.random() * personalities.length)];
+      player.aiPersonality = randomPersonality;
+      player.aiPersonalityData = AI_PERSONALITIES[randomPersonality];
+    }
+
+    var currentMap = 'taiwan'; // 預設地圖
+
+    // ========== 音效系統 ==========
+    let audioCtx = null;
     
     function initAudio() {
       if (!audioCtx) {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         audioCtx = new AudioContext();
-        log('✅ AudioContext 已創建，狀態: ' + audioCtx.state);
       }
       return audioCtx;
     }
@@ -60,63 +2086,1889 @@
     function playSound(type) {
       try {
         const ctx = initAudio();
-        log('🔊 嘗試播放音效: ' + type + '，AudioContext 狀態: ' + ctx.state);
+        const oscillator = ctx.createOscillator();
+        const gainNode = ctx.createGain();
         
-        // 如果 AudioContext 被暫停，嘗試恢復
-        if (ctx.state === 'suspended') {
-          ctx.resume().then(() => {
-            log('✅ AudioContext 已恢復');
-            actuallyPlaySound(ctx, type);
-          });
-        } else {
-          actuallyPlaySound(ctx, type);
-        }
+        oscillator.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        
+        const config = {
+          roll: {freq: 440, dur: 0.2, vol: 0.8},
+          move: {freq: 523, dur: 0.15, vol: 0.6},
+          buy: {freq: 659, dur: 0.3, vol: 0.8},
+          build: {freq: 784, dur: 0.4, vol: 0.8},
+          purchase: {freq: 659, dur: 0.3, vol: 0.8},
+          error: {freq: 200, dur: 0.25, vol: 0.8},
+          click: {freq: 800, dur: 0.1, vol: 0.5}
+        }[type] || {freq: 440, dur: 0.2, vol: 0.6};
+        
+        oscillator.frequency.value = config.freq;
+        gainNode.gain.setValueAtTime(config.vol, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + config.dur);
+        
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + config.dur);
       } catch(e) {
-        log('❌ 音效錯誤: ' + e.message);
-        console.error(e);
+        console.log('音效錯誤:', e);
       }
     }
     
-    function actuallyPlaySound(ctx, type) {
-      const oscillator = ctx.createOscillator();
-      const gainNode = ctx.createGain();
+    // 為所有按鈕添加點擊音效
+    function addButtonSounds() {
+      document.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          try { playSound('click'); } catch(e) {}
+        });
+      });
+    }
+    // ========== 音效系統結束 ==========
+    var $ = function(s){ return document.querySelector(s); };
+    var $$ = function(s){ return Array.prototype.slice.call(document.querySelectorAll(s)); };
+    function sleep(ms){ return new Promise(function(r){ setTimeout(r,ms); }); }
+    function shuffle(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+    function clamp(n,a,b){ return Math.max(a, Math.min(b,n)); }
+    
+    // 隨機倍率函數（倍率越高機率越低）
+    function getRandomMultiplier(min, max) {
+      var weights = [];
+      for (var i = min; i <= max; i++) {
+        // 倍率越高，權重越低（逆序）
+        weights.push(max - i + 1);
+      }
+      var totalWeight = weights.reduce(function(sum, w) { return sum + w; }, 0);
+      var random = Math.random() * totalWeight;
+      var cumulative = 0;
+      for (var i = 0; i < weights.length; i++) {
+        cumulative += weights[i];
+        if (random < cumulative) {
+          return min + i;
+        }
+      }
+      return min;
+    }
+
+    // ----- 經濟參數（起始金額 1,000,000） -----
+    var START_SALARY = 150000;   // 起點薪資（約起始金額的 15%）
+    var JAIL_FINE = 50000;      // 保釋金（約起始金額的 5%）
+    var STATION_RENTS = [20000, 40000, 80000, 160000]; // 車站租金
+    var BASE_RENT_FACTOR = 0.1; // 地產基礎租金 = 地價 × 10%
+    
+    // 物價通膨系統：根據回合數計算物價倍率
+    function getInflationMultiplier() {
+      var rounds = state.totalRounds || 0;
+      if (rounds >= 120) return 3;
+      if (rounds >= 90) return 2.5;
+      if (rounds >= 60) return 2;
+      if (rounds >= 30) return 1.5;
+      return 1;
+    }
+
+    var COLORS = {brown:"#8d5524",lightBlue:"#7ab6ff",pink:"#ff8dc7",orange:"#ffa14a",red:"#ff6b6b",yellow:"#ffd93d",green:"#28c76f",darkBlue:"#5470ff"};
+    var HOUSE_COST = { // 建屋成本（每棟），按顏色群
+      brown:50000, lightBlue:50000, pink:100000, orange:100000, red:150000, yellow:150000, green:200000, darkBlue:200000
+    };
+    var HOUSE_MULT = [1,5,15,45,80,110]; // 0~4 棟與 5（旅館）的租金倍率（相對 baseRent）
+
+    // ----- 地圖 -----
+    
+    // 動態生成 tiles 數組
+    function generateTiles(mapKey) {
+      var mapData = MAPS[mapKey];
+      var tiles = new Array(40);
       
-      oscillator.connect(gainNode);
-      gainNode.connect(ctx.destination);
+      // 初始化所有格子為空
+      for (var i = 0; i < 40; i++) {
+        tiles[i] = {idx: i, type: "EMPTY", name: "", price: 0, group: ""};
+      }
       
-      const config = {
-        test: {freq: 440, dur: 0.3, vol: 0.5},
-        roll: {freq: 440, dur: 0.1, vol: 0.3},
-        move: {freq: 523, dur: 0.08, vol: 0.25}
-      }[type] || {freq: 440, dur: 0.1, vol: 0.2};
+      // 特殊格子
+      tiles[0] = {idx:0, type:"GO", label:"起點"};
+      tiles[10] = {idx:10, type:"JAIL", label:"監獄／探監"};
+      tiles[20] = {idx:20, type:"FREE", label:"免費停車"};
+      tiles[30] = {idx:30, type:"GOTOJAIL", label:"入獄"};
       
-      oscillator.frequency.value = config.freq;
-      gainNode.gain.setValueAtTime(config.vol, ctx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + config.dur);
+      // 機會和命運
+      tiles[7] = {idx:7, type:"CHANCE", label:"機會"};
+      tiles[22] = {idx:22, type:"CHANCE", label:"機會"};
+      tiles[36] = {idx:36, type:"CHANCE", label:"機會"};
+      tiles[2] = {idx:2, type:"CHEST", label:"命運"};
+      tiles[17] = {idx:17, type:"CHEST", label:"命運"};
+      tiles[33] = {idx:33, type:"CHEST", label:"命運"};
       
-      oscillator.start(ctx.currentTime);
-      oscillator.stop(ctx.currentTime + config.dur);
+      // 稅金
+      tiles[4] = {idx:4, type:"TAX", amount: 200000, label:"所得稅"};
+      tiles[38] = {idx:38, type:"TAX", amount: 100000, label:"豪華稅"};
       
-      log('✅ 音效已播放: ' + type);
+      // 地產
+      mapData.properties.forEach(function(prop) {
+        tiles[prop.idx] = {
+          idx: prop.idx,
+          type: "PROPERTY",
+          name: prop.name,
+          price: prop.price,
+          group: prop.group
+        };
+      });
+      
+      // 車站
+      mapData.stations.forEach(function(station) {
+        tiles[station.idx] = {
+          idx: station.idx,
+          type: "STATION",
+          name: station.name
+        };
+      });
+      
+      // 公用事業
+      mapData.utilities.forEach(function(util) {
+        tiles[util.idx] = {
+          idx: util.idx,
+          type: "UTILITY",
+          name: util.name
+        };
+      });
+      
+      return tiles;
     }
     
-    document.getElementById('testBtn').addEventListener('click', () => {
-      log('--- 點擊測試按鈕 ---');
-      playSound('test');
+    var tiles = generateTiles(currentMap);
+
+
+    function baseRent(price){ return Math.round(price*BASE_RENT_FACTOR); }
+    function getPrice(t){ if (t.type==="PROPERTY") return t.price; if (t.type==="STATION") return 6600; if (t.type==="UTILITY") return 5000; return 0; }
+    function idxToCoord(i){ if (i<=10) return {r:10,c:i}; if (i<=20) return {r:10-(i-10),c:10}; if (i<=30) return {r:0,c:10-(i-20)}; return {r:i-30,c:0}; }
+
+    // ----- 狀態 -----
+    var state = {
+      players: [], cur:0, dice:[0,0], doublesInRow:0,
+      awaitingBuy:false, mustEnd:false, bonusNextGo:[], logSeq:0,
+      houses:{}, justBought:[], // { [idx]: 0..5 }
+      hasUpgradedThisTurn: false, // 1回合只能升級一次
+      cardCollection: { chance: {}, chest: {} }, // 卡牌收藏系統
+      totalRounds: 0 // 總回合數
+    };
+    var PlayerColors = ["#e74c3c","#2980b9","#27ae60","#8e44ad"];
+
+    function uuid(){ try{ if (window.crypto && typeof window.crypto.randomUUID==='function') return window.crypto.randomUUID(); }catch(e){} return 'p-'+Math.random().toString(36).slice(2); }
+    function makePlayer(name,isAI,color){ return { id: uuid(), name:name, isAI:isAI, color:color, cash:5000000, pos:0, inJail:false, jailTurns:0, outCard:0, properties:[], mortgaged:[], alive:true, rentBonusTemp:0, heldCards:[] }; }
+    function initPlayers(){
+      state.players=[
+        makePlayer("你",false,PlayerColors[0]),
+        makePlayer("蒼嶺",true,PlayerColors[1]),
+        makePlayer("星河",true,PlayerColors[2]),
+        makePlayer("雲峫",true,PlayerColors[3])
+      ];
+      state.cur=0; state.dice=[0,0]; state.doublesInRow=0; state.awaitingBuy=false; state.mustEnd=false; state.bonusNextGo=[]; state.houses={}; state.justBought=[]; state.hasUpgradedThisTurn=false; state.cardCollection={ chance: {}, chest: {} }; state.totalRounds=0;
+      renderPlayers(); log("🎮 v2.3 開始：起始資金 $100,000，房屋系統啟用。", false);
+    }
+    
+    // 使用選擇的角色和人數初始化玩家
+    function initPlayersWithSelection() {
+      // 從角色清單中移除已選擇的角色
+      var availableChars = CHARACTERS.filter(function(c) { return c.id !== selectedCharacter.id; });
+      
+      // 隨機打亂並選擇 AI 角色
+      shuffle(availableChars);
+      var aiChars = availableChars.slice(0, selectedPlayerCount - 1);
+      
+      // 創建玩家列表
+      state.players = [];
+      
+      // 玩家1：使用者選擇的角色
+      state.players.push(makePlayer(selectedCharacter.name, false, PlayerColors[0]));
+      
+      // AI 玩家
+      for (var i = 0; i < aiChars.length; i++) {
+        state.players.push(makePlayer(aiChars[i].name, true, PlayerColors[i + 1]));
+      }
+      
+      state.cur=0; state.dice=[0,0]; state.doublesInRow=0; state.awaitingBuy=false; state.mustEnd=false; state.bonusNextGo=[]; state.houses={}; state.justBought=[]; state.hasUpgradedThisTurn=false; state.cardCollection={ chance: {}, chest: {} }; state.totalRounds=0;
+      renderPlayers(); 
+      log("🎮 遊戲開始！" + selectedPlayerCount + "人對戰，起始資金 $100,000。", false);
+    }
+
+    // ----- 棋盤與棋子 -----
+    function buildBoard(){
+      var board=document.getElementById('board'); board.innerHTML='<div id="toast" class="toast hidden"></div>';
+      for (var r=0;r<11;r++){ for (var c=0;c<11;c++){ var cell=document.createElement('div'); cell.className='tile empty'; cell.style.gridRow=(r+1); cell.style.gridColumn=(c+1); board.appendChild(cell); } }
+      for (var k=0;k<tiles.length;k++){
+        var t=tiles[k]; var pos=idxToCoord(t.idx); var cell=document.createElement('div'); cell.className='tile'; cell.style.gridRow=(pos.r+1); cell.style.gridColumn=(pos.c+1); cell.setAttribute('data-tile-idx', t.idx);
+        var cls=""; if (t.type==="PROPERTY") cls="property"; if (t.type==="STATION") cls="station"; if (t.type==="UTILITY") cls="utility"; if (t.type==="TAX") cls="tax"; if (t.type==="CHANCE") cls="chance"; if (t.type==="CHEST") cls="chest"; if (t.type==="GOTOJAIL") cls="gotojail"; if (t.type==="JAIL") cls="jail"; if (t.type==="START") cls="start"; if (t.type==="FREE") cls="free"; if ([0,10,20,30].indexOf(t.idx)>=0) cell.classList.add('corner'); if (cls) cell.classList.add(cls);
+        var label=document.createElement('div'); label.className='label'; label.textContent=t.name||t.label||""; cell.appendChild(label);
+        if (t.type==="PROPERTY"){ var colorbar=document.createElement('div'); colorbar.className='colorbar'; colorbar.style.background=COLORS[t.group]||"#ccc"; cell.prepend(colorbar); var price=document.createElement('div'); price.className='price'; var p=t.price; var r0=baseRent(p); price.textContent="$"+p+"｜租$"+r0; cell.appendChild(price); }
+        if (t.type==="STATION"||t.type==="UTILITY"){ var price2=document.createElement('div'); price2.className='price'; price2.textContent="可購買"; cell.appendChild(price2); }
+        var owner=document.createElement('div'); owner.className='owner'; owner.style.display='none'; owner.setAttribute('data-idx', t.idx); cell.appendChild(owner);
+        // 房屋顯示
+        var hs=document.createElement('div'); hs.className='house-stack'; hs.setAttribute('data-hidx', t.idx); cell.appendChild(hs);
+        board.appendChild(cell);
+      }
+      renderTokens(); updateOwners(); renderHouses();
+    }
+    function renderTokens(){
+      $$('.token').forEach(function(e){ e.remove(); });
+      
+      // 按格子分組棋子
+      var tokensByCell = {};
+      for (var i=0;i<state.players.length;i++){
+        var p=state.players[i]; 
+        if (!p.alive) continue; 
+        var key = p.pos;
+        if (!tokensByCell[key]) tokensByCell[key] = [];
+        tokensByCell[key].push({idx: i, player: p});
+      }
+      
+      // 渲染每個格子的棋子
+      Object.keys(tokensByCell).forEach(function(posKey){
+        var tokens = tokensByCell[posKey];
+        var pos = idxToCoord(Number(posKey));
+        var tileIdx = Number(posKey);
+        var cell = document.querySelector('.tile[data-tile-idx="'+tileIdx+'"]');
+        if (!cell) return;
+        
+        // 創建棋子容器（使用 grid 佈局）
+        var container = document.createElement('div');
+        container.className = 'token-container';
+        var totalPlayers = state.players.length;
+        
+        // 根據玩家數量設定 grid 佈局
+        if (totalPlayers === 2) {
+          // 2人：上下分割
+          container.style.cssText = 'position: absolute; inset: 0; display: grid; grid-template-rows: 1fr 1fr; padding: 0; gap: 0; z-index: 250 !important; overflow: hidden;';
+        } else if (totalPlayers === 3) {
+          // 3人：三等份（上中下）
+          container.style.cssText = 'position: absolute; inset: 0; display: grid; grid-template-rows: 1fr 1fr 1fr; padding: 0; gap: 0; z-index: 250 !important; overflow: hidden;';
+        } else {
+          // 4人：2×2 網格
+          container.style.cssText = 'position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; padding: 0; gap: 0; z-index: 250 !important; overflow: hidden;';
+        }
+        
+        // 創建所有玩家的棋子位置（即使不在這個格子也預留位置）
+        for (var pi = 0; pi < totalPlayers; pi++) {
+          var slot = document.createElement('div');
+          slot.style.cssText = 'display: flex; align-items: center; justify-content: center; overflow: visible; position: relative; width: 100%; height: 100%;';
+          
+          // 檢查這個玩家是否在這個格子
+          var tokenData = tokens.find(function(t){ return t.idx === pi; });
+          
+          if (tokenData) {
+            var tok = document.createElement('div'); 
+            tok.className = 'token'; 
+            tok.style.background = tokenData.player.color; 
+            tok.setAttribute('data-p', String(tokenData.idx)); 
+            tok.textContent = tokenData.player.name;
+            
+            // 根據玩家數量調整棋子大小（使用固定像素值）
+            var tokenSize = totalPlayers === 2 ? '22px' : (totalPlayers === 3 ? '18px' : '16px');
+            tok.style.width = tokenSize;
+            tok.style.height = tokenSize;
+            tok.style.minWidth = tokenSize;
+            tok.style.minHeight = tokenSize;
+            tok.style.maxWidth = tokenSize;
+            tok.style.maxHeight = tokenSize;
+            tok.style.fontSize = totalPlayers === 2 ? '8px' : (totalPlayers === 3 ? '7px' : '6px');
+            // 覆蓋 position 樣式，使用 relative 以便在 flex 容器中居中
+            tok.style.position = 'relative';
+            tok.style.bottom = 'auto';
+            tok.style.left = 'auto';
+            tok.style.transform = 'none';
+            
+            // 不同玩家使用不同形狀和動畫
+            if (tokenData.idx === 0) {
+              tok.style.borderRadius = '50%';
+              tok.style.animation = 'player1Pulse 3s ease-in-out infinite';
+            } else if (tokenData.idx === 1) {
+              tok.style.borderRadius = '6px';
+              tok.style.animation = 'player2Flip 4s ease-in-out infinite';
+              tok.style.transformStyle = 'preserve-3d';
+            } else if (tokenData.idx === 2) {
+              tok.style.borderRadius = '0';
+              tok.style.clipPath = 'polygon(50% 0%, 0% 100%, 100% 100%)';
+              tok.style.animation = 'player3Bounce 2s ease-in-out infinite';
+            } else if (tokenData.idx === 3) {
+              tok.style.borderRadius = '0';
+              tok.style.animation = 'player4Swing 3s ease-in-out infinite';
+              var inner = document.createElement('span');
+              inner.textContent = tok.textContent;
+              inner.style.transform = 'rotate(-45deg)';
+              inner.style.display = 'inline-block';
+              tok.textContent = '';
+              tok.appendChild(inner);
+            }
+            
+            slot.appendChild(tok);
+          }
+          
+          container.appendChild(slot);
+        }
+        
+        cell.appendChild(container);
+      });
+    }
+    
+    // 棋子移動動畫
+    function animateTokenMove(playerIdx, steps, callback) {
+      function moveStep(remainingSteps) {
+        if (remainingSteps === 0) {
+          if (callback) callback();
+          return;
+        }
+        
+        var p = state.players[playerIdx];
+        p.pos = (p.pos + 1) % 40;
+        renderTokens();
+        
+        // 每移動一步播放音效
+        try { playSound('move'); } catch(e) {}
+        
+        // 添加移動效果到當前棋子
+        $$('.token').forEach(function(tok){ tok.classList.remove('moving'); });
+        var currentToken = document.querySelector('.token[data-p="' + playerIdx + '"]');
+        if (currentToken) {
+          currentToken.classList.add('moving');
+        }
+        
+        setTimeout(function() {
+          moveStep(remainingSteps - 1);
+        }, 400);
+      }
+      
+      moveStep(steps);
+    }
+    function updateOwners(){
+      // 移除所有格子的 owned class
+      $$('.tile').forEach(function(tile){ tile.classList.remove('owned'); tile.style.backgroundColor = ''; });
+      $$('.owner').forEach(function(el){ el.style.display='none'; });
+      
+      for (var pi=0;pi<state.players.length;pi++){ 
+        var pl=state.players[pi]; 
+        if (!pl.alive) continue; 
+        
+        for (var j=0;j<pl.properties.length;j++){ 
+          var idx=pl.properties[j]; 
+          
+          // 使用 data-tile-idx 屬性精確定位格子
+          var tile=document.querySelector('.tile[data-tile-idx="'+idx+'"]');
+          if (tile) {
+            // 添加 owned class 並設置背景色
+            tile.classList.add('owned');
+            tile.style.backgroundColor = pl.color;
+            
+            // 更新 owner 小圓點
+            var ownerEl=tile.querySelector('.owner');
+            if (ownerEl){ 
+              ownerEl.style.display='block'; 
+              ownerEl.style.background=pl.color; 
+            }
+          }
+        } 
+      }
+    }
+    function renderHouses(){
+      $$('.house-stack').forEach(function(s){ s.innerHTML=''; });
+      Object.keys(state.houses).forEach(function(k){
+        var idx=Number(k), n=state.houses[k]|0; if (!n) return;
+        var holder=document.querySelector('.house-stack[data-hidx="'+idx+'"]'); if (!holder) return;
+        if (n===5){ var h=document.createElement('div'); h.className='hotel'; holder.appendChild(h); return; }
+        for (var i=0;i<n;i++){ var x=document.createElement('div'); x.className='house'; holder.appendChild(x); }
+      });
+    }
+
+    function renderPlayers(){
+      var panel=document.getElementById('playersPanel'); 
+      var html=""; 
+      for (var i=0;i<state.players.length;i++){ 
+        var p=state.players[i]; 
+        if (!p.alive) continue; 
+        
+        // 創建形狀標記
+        var shapeStyle = 'width: 20px; height: 20px; background:' + p.color + '; display: inline-block; margin-right: 8px;';
+        if (i === 0) {
+          shapeStyle += ' border-radius: 50%;'; // 圓形
+        } else if (i === 1) {
+          shapeStyle += ' border-radius: 3px;'; // 方形
+        } else if (i === 2) {
+          shapeStyle += ' clip-path: polygon(50% 0%, 0% 100%, 100% 100%);'; // 三角形
+        } else if (i === 3) {
+          shapeStyle += ' transform: rotate(45deg);'; // 菱形
+        }
+        
+        html+='<div class="row"><div class="swatch" style="'+shapeStyle+'"></div><div class="name">'+(i===state.cur?"⭐ ":"")+p.name+(p.inJail?"（獄）":"")+(p.outCard>0?"🃏":"")+'</div><div class="cash">$'+p.cash+'</div></div>'; 
+      } 
+      panel.innerHTML=html; 
+      var inflationMult = getInflationMultiplier();
+      var inflationText = inflationMult > 1 ? ' (物價x' + inflationMult + ')' : '';
+      document.getElementById('currentPlayer').innerHTML = '<div style="font-size:18px; font-weight:bold;">' + state.players[state.cur].name + '</div><div style="font-size:14px; color:#666; margin-top:5px;">第 ' + state.totalRounds + ' 回合' + inflationText + '</div>';
+    }
+    function toast(msg){ var t=document.getElementById('toast'); if (!t) return; t.textContent=msg; t.classList.remove('hidden'); clearTimeout(toast._tid); toast._tid=setTimeout(function(){ t.classList.add('hidden'); }, 1500); }
+    function log(msg, highlightMe){ if (highlightMe===void 0) highlightMe=false; var logEl=document.getElementById('log'); var div=document.createElement('div'); div.className='entry'+(highlightMe?' me':''); div.textContent=msg; logEl.prepend(div); toast(msg); }
+
+    function endTurn(){ var p=state.players[state.cur]; p.rentBonusTemp=0; nextPlayer(); }
+    function nextPlayer(){ state.justBought=[]; state.hasUpgradedThisTurn=false; do { state.cur=(state.cur+1)%state.players.length; } while(!state.players[state.cur].alive); if (state.cur === 0) { state.totalRounds++; } state.dice=[0,0]; state.doublesInRow=0; state.awaitingBuy=false; state.mustEnd=false; renderPlayers(); $('#btnRoll').disabled = state.players[state.cur].isAI; $('#btnEnd').disabled = true; $('#btnBuy').disabled = true; $('#btnSkip').disabled = true; $('#dice1').textContent='-'; $('#dice2').textContent='-'; $('#turnInfo').textContent=''; if (checkWin()) return; if (state.players[state.cur].isAI) { aiTurn(); } else { if (state.players[state.cur].inJail) showJailOptions(state.players[state.cur]); } }
+    function checkWin(){ var alive=state.players.filter(function(p){ return p.alive; }); if (alive.length===1){ showModal('🏆 '+alive[0].name+' 獲勝！（其他玩家皆已破產）'); $('#btnRoll').disabled=true; $('#btnEnd').disabled=true; return true; } return false; }
+
+    function showModal(html, withCancel){ if (withCancel===void 0) withCancel=false; $('#modalBody').innerHTML=html; $('#modal').classList.remove('hidden'); $('#modalCancel').style.display = withCancel?'inline-flex':'none';
+      return new Promise(function(resolve){ function ok(){ $('#modal').classList.add('hidden'); $('#modalOk').removeEventListener('click', ok); $('#modalCancel').removeEventListener('click', cancel); resolve(true); } function cancel(){ $('#modal').classList.add('hidden'); $('#modalOk').removeEventListener('click', ok); $('#modalCancel').removeEventListener('click', cancel); resolve(false); } $('#modalOk').addEventListener('click', ok, {once:true}); $('#modalCancel').addEventListener('click', cancel, {once:true}); });
+    }
+
+    // ---- 新遊戲流程 ----
+    var selectedPlayerCount = 0;
+    var selectedCharacter = null;
+    
+    // 1. 選擇遊戲人數
+    function showPlayerCountSelection() {
+      var html = '<h2 style="text-align:center;">🎮 新遊戲</h2>';
+      html += '<p style="text-align:center;">請選擇遊戲人數：</p>';
+      html += '<div style="display:flex;gap:16px;justify-content:center;margin-top:20px;flex-wrap:wrap;">';
+      html += '<button class="player-count-btn" data-count="2" style="padding:20px 40px;font-size:18px;border:2px solid #ddd;border-radius:8px;background:white;cursor:pointer;white-space:nowrap;min-width:160px;">👥 2人對戰</button>';
+      html += '<button class="player-count-btn" data-count="3" style="padding:20px 40px;font-size:18px;border:2px solid #ddd;border-radius:8px;background:white;cursor:pointer;white-space:nowrap;min-width:160px;">👥 3人對戰</button>';
+      html += '<button class="player-count-btn" data-count="4" style="padding:20px 40px;font-size:18px;border:2px solid #ddd;border-radius:8px;background:white;cursor:pointer;white-space:nowrap;min-width:160px;">👥 4人對戰</button>';
+      html += '</div>';
+      
+      showModal(html, false);
+      
+      setTimeout(function() {
+        var btns = document.querySelectorAll('.player-count-btn');
+        btns.forEach(function(btn) {
+          btn.addEventListener('mouseenter', function() {
+            this.style.borderColor = '#4CAF50';
+            this.style.transform = 'scale(1.05)';
+          });
+          btn.addEventListener('mouseleave', function() {
+            this.style.borderColor = '#ddd';
+            this.style.transform = 'scale(1)';
+          });
+          btn.addEventListener('click', function() {
+            selectedPlayerCount = parseInt(this.getAttribute('data-count'));
+            document.getElementById('modal').classList.add('hidden');
+            showCharacterSelection();
+          });
+        });
+      }, 100);
+    }
+    
+    // 2. 選擇角色
+    function showCharacterSelection() {
+      var html = '<h2>🎭 選擇你的角色</h2>';
+      html += '<p>請選擇一個角色（AI 會自動選擇其他角色）：</p>';
+      html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px;max-height:400px;overflow-y:auto;">';
+      
+      CHARACTERS.forEach(function(char) {
+        html += '<button class="char-btn" data-char="' + char.id + '" style="padding:12px;border:2px solid #ddd;border-radius:8px;background:white;cursor:pointer;text-align:center;">';
+        html += '<div style="font-size:32px;">' + char.emoji + '</div>';
+        html += '<div style="font-size:14px;margin-top:4px;">' + char.name + '</div>';
+        html += '</button>';
+      });
+      
+      html += '</div>';
+      
+      showModal(html, false);
+      
+      setTimeout(function() {
+        var btns = document.querySelectorAll('.char-btn');
+        btns.forEach(function(btn) {
+          btn.addEventListener('mouseenter', function() {
+            this.style.borderColor = '#4CAF50';
+            this.style.transform = 'scale(1.05)';
+          });
+          btn.addEventListener('mouseleave', function() {
+            this.style.borderColor = '#ddd';
+            this.style.transform = 'scale(1)';
+          });
+          btn.addEventListener('click', function() {
+            var charId = this.getAttribute('data-char');
+            selectedCharacter = CHARACTERS.find(function(c) { return c.id === charId; });
+            document.getElementById('modal').classList.add('hidden');
+            showMapSelection();
+          });
+        });
+      }, 100);
+    }
+    
+    // ---- 地圖選擇界面 ----
+    function showMapSelection() {
+      var html = '<h2>🗺️ 選擇地圖</h2>';
+      html += '<p>請選擇你想遊玩的地圖：</p>';
+      html += '<div style="max-height:400px;overflow-y:auto;padding-right:8px;margin-top:16px;">';
+      html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">';
+      
+      var mapList = [
+        {key: 'taiwan', name: '🇼🇳 台灣', desc: '寶島風光'},
+        {key: 'philippines', name: '🇵🇭 菲律賓', desc: '千島之國'},
+        {key: 'hongkong', name: '🇭🇰 香港', desc: '東方之珠'},
+        {key: 'vietnam', name: '🇻🇳 越南', desc: '南洋風情'},
+        {key: 'thailand', name: '🇹🇭 泰國', desc: '微笑之國'},
+        {key: 'japan', name: '🇯🇵 日本', desc: '櫻花之國'},
+        {key: 'korea', name: '🇰🇷 韓國', desc: '漢江奇蹟'},
+        {key: 'singapore', name: '🇸🇬 新加坡', desc: '獅城花園'},
+        {key: 'malaysia', name: '🇲🇾 馬來西亞', desc: '雙塔之國'},
+        {key: 'indonesia', name: '🇮🇩 印尼', desc: '萬島之國'},
+        {key: 'australia', name: '🇦🇺 澳洲', desc: '袋鼠之國'},
+        {key: 'india', name: '🇮🇳 印度', desc: '泰姬之國'},
+        {key: 'uae', name: '🇦🇪 阿聯酋', desc: '沙漠奇蹟'},
+        {key: 'russia', name: '🇷🇺 俄羅斯', desc: '廣闊大地'},
+        {key: 'uk', name: '🇬🇧 英國', desc: '日不落帝國'},
+        {key: 'italy', name: '🇮🇹 義大利', desc: '文藝復興'},
+        {key: 'netherlands', name: '🇳🇱 荷蘭', desc: '風車之國'},
+        {key: 'usa', name: '🇺🇸 美國', desc: '自由之地'},
+        {key: 'brazil', name: '🇧🇷 巴西', desc: '森巴之國'},
+        {key: 'galaxy', name: '🌌 銀河系', desc: '宇宙探索'}
+      ];
+      
+      mapList.forEach(function(map) {
+        html += '<button class="map-btn" data-map="' + map.key + '" style="padding:16px;font-size:16px;border:2px solid #ddd;border-radius:8px;background:white;cursor:pointer;transition:all 0.2s;">';
+        html += '<div style="font-size:24px;margin-bottom:8px;">' + map.name + '</div>';
+        html += '<div style="font-size:14px;color:#666;">' + map.desc + '</div>';
+        html += '</button>';
+      });
+      
+      html += '</div>'; // 關閉 grid
+      html += '</div>'; // 關閉滾動容器
+      
+      showModal(html, false);
+      
+      // 添加按鈕事件
+      setTimeout(function() {
+        var mapBtns = document.querySelectorAll('.map-btn');
+        mapBtns.forEach(function(btn) {
+          btn.addEventListener('mouseenter', function() {
+            this.style.borderColor = '#4CAF50';
+            this.style.transform = 'scale(1.05)';
+          });
+          btn.addEventListener('mouseleave', function() {
+            this.style.borderColor = '#ddd';
+            this.style.transform = 'scale(1)';
+          });
+          btn.addEventListener('click', function() {
+            var mapKey = this.getAttribute('data-map');
+            currentMap = mapKey;
+            tiles = generateTiles(currentMap);
+            document.getElementById('modal').classList.add('hidden');
+            initPlayersWithSelection();
+            setTimeout(addButtonSounds, 500);
+            buildBoard();
+            renderTokens();
+            $('#btnRoll').disabled=false; 
+            $('#btnEnd').disabled=true; 
+            $('#btnBuy').disabled=true; 
+            $('#btnSkip').disabled=true; 
+            $('#dice1').textContent='-'; 
+            $('#dice2').textContent='-'; 
+            $('#turnInfo').textContent=''; 
+            $('#log').innerHTML='';
+            log('🗺️ 已選擇地圖：' + MAPS[mapKey].name, false);
+          });
+        });
+      }, 100);
+    }
+
+    // ---- 擲骰與移動（逐格動畫） ----
+    function rollDice(){ 
+      // 添加3D動畫
+      var dice1El = $('#dice1');
+      var dice2El = $('#dice2');
+      dice1El.classList.add('rolling');
+      dice2El.classList.add('rolling');
+      
+      setTimeout(function(){
+        dice1El.classList.remove('rolling');
+        dice2El.classList.remove('rolling');
+      }, 1200);
+      
+      var d1=1+Math.floor(Math.random()*6), d2=1+Math.floor(Math.random()*6); 
+      state.dice=[d1,d2]; 
+      
+      // 延遲顯示結果，讓動畫更真實
+      setTimeout(function(){
+        dice1El.textContent=d1; 
+        dice2El.textContent=d2;
+      }, 600);
+      
+      return [d1,d2]; 
+    }
+    async function onRoll(){ try{playSound("roll");}catch(e){}  var p=state.players[state.cur]; if (p.inJail) return {again:false}; $('#btnRoll').disabled=true; var d=rollDice(), d1=d[0], d2=d[1]; var isDouble=d1===d2; if (isDouble){ state.doublesInRow++; if (state.doublesInRow>=3){ log('⚠️ '+p.name+' 連續第三次擲出雙骰，被送入獄。', !p.isAI); goToJail(p); $('#btnEnd').disabled=false; return {again:false}; } } else { state.doublesInRow=0; } await sleep(1200); await moveSteps(p, d1+d2); await resolveTile(p, d1+d2); if (isDouble && p.alive && !p.inJail){ $('#turnInfo').textContent='雙骰！你可再擲一次。'; $('#btnRoll').disabled=false; $('#btnEnd').disabled=true; return {again:true}; } else { $('#btnEnd').disabled=false; return {again:false}; } }
+    async function moveSteps(p, steps){ 
+      var playerIdx = state.players.indexOf(p);
+      var oldPos = p.pos;
+      // 音效已在 animateTokenMove 中每步播放，此處不需要
+      return new Promise(function(resolve) {
+        animateTokenMove(playerIdx, steps, function() {
+          var newPos = p.pos;
+          // 檢查是否經過起點（但不是剛好停在起點）
+          var passedGo = false;
+          if (oldPos < newPos) {
+            // 正常前進，沒有跨越 0
+            passedGo = false;
+          } else if (oldPos > newPos) {
+            // 跨越了 0 點（從 39 回到 0 附近）
+            passedGo = true;
+          }
+          // 如果經過起點且不是剛好停在起點
+          if (passedGo && newPos !== 0) {
+            var multiplier = getRandomMultiplier(1, 3); // 1~3倍
+            var bonus = START_SALARY * multiplier;
+            var bi=state.bonusNextGo.indexOf(p.id); 
+            if (bi>=0){ bonus+=3300; state.bonusNextGo.splice(bi,1); } 
+            p.cash+=bonus; 
+            renderPlayers(); 
+            log('💵 '+p.name+' 經過起點，領 '+multiplier+'倍薪水 $'+bonus, !p.isAI);
+          }
+          resolve();
+        });
+      });
+    }
+
+    // ---- 所有權與群組 ----
+    function ownerOf(idx){ for (var i=0;i<state.players.length;i++){ var pl=state.players[i]; if (!pl.alive) continue; if (pl.properties.indexOf(idx)>=0) return i; } return -1; }
+    function groupSlots(groupId){ return tiles.filter(function(t){ return t.type==="PROPERTY" && t.group===groupId; }).map(function(t){ return t.idx; }); }
+    function groupOwnedCount(ownerIdx, groupId){ var slots=groupSlots(groupId); var pl=state.players[ownerIdx]; var cnt=0; for (var k=0;k<slots.length;k++){ var idx=slots[k]; if (pl.properties.indexOf(idx)>=0 && pl.mortgaged.indexOf(idx)<0) cnt++; } return {cnt:cnt,total:slots.length}; }
+    function hasMonopoly(ownerIdx, groupId){ var g=groupOwnedCount(ownerIdx, groupId); return g.cnt===g.total && g.total>0; }
+
+    // ---- 建屋／賣屋邏輯 ----
+    function houseCount(idx){ return state.houses[idx]|0; }
+    function canBuildHere(p, idx){
+      var t=tiles[idx]; if (t.type!=="PROPERTY") return false;
+      if (p.properties.indexOf(idx)<0) return false;
+      if (p.mortgaged.indexOf(idx)>=0) return false;
+      // 移除壟斷限制：只要擁有地產就能升級
+      // if (!hasMonopoly(state.cur, t.group)) return false;
+      var n=houseCount(idx); if (n>=5) return false;
+      // 移除均衡建屋限制：可以自由升級
+      // var gs=groupSlots(t.group); var arr=gs.map(houseCount);
+      // return n<=Math.min.apply(null, arr)+1;
+      return true;
+    }
+    function canSellHouseHere(p, idx){
+      var t=tiles[idx]; if (t.type!=="PROPERTY") return false;
+      if (p.properties.indexOf(idx)<0) return false;
+      var n=houseCount(idx); if (n<=0) return false;
+      // 移除均衡賣屋限制：可以自由賣屋
+      // var gs=groupSlots(t.group); var arr=gs.map(houseCount); var max=Math.max.apply(null, arr);
+      // return n===max;
+      return true;
+    }
+    function buildCost(idx){ var g=tiles[idx].group; var baseCost = HOUSE_COST[g]||150; return Math.floor(baseCost * getInflationMultiplier()); }
+    function sellValue(idx){ return Math.floor(buildCost(idx)*0.5); }
+
+    // ---- 地格處理 ----
+    async function resolveTile(p, diceTotal){
+      var t=tiles[p.pos];
+      if (t.type==="GO") {
+        // 剛好停在起點，2~5倍薪水
+        var multiplier = getRandomMultiplier(2, 5);
+        var bonus = START_SALARY * multiplier;
+        var bi=state.bonusNextGo.indexOf(p.id); 
+        if (bi>=0){ bonus+=3300; state.bonusNextGo.splice(bi,1); } 
+        p.cash+=bonus; 
+        renderPlayers(); 
+        log('🎉 '+p.name+' 剛好停在起點，領 '+multiplier+'倍薪水 $'+bonus+'!', !p.isAI);
+      }
+      else if (t.type==="PROPERTY") await onLandProperty(p,t);
+      else if (t.type==="STATION") await onLandStation(p,t);
+      else if (t.type==="UTILITY") await onLandUtility(p,t,diceTotal);
+      else if (t.type==="TAX") await payToBank(p,t.amount,'稅金');
+      else if (t.type==="CHANCE") await drawCard(p, chanceDeck, '機會', diceTotal);
+      else if (t.type==="CHEST") await drawCard(p, chestDeck, '命運', diceTotal);
+      else if (t.type==="GOTOJAIL") await onGoToJail(p);
+      else if (t.type==="JAIL") await onJailVisit(p);
+      else if (t.type==="FREE") await onFreeParking(p);
+    }
+
+    function rentForProperty(ownerIdx, t){
+      var base = baseRent(t.price);
+      var h = houseCount(t.idx);
+      if (h>0) return base * HOUSE_MULT[clamp(h,0,5)];
+      
+      // 無房：根據擁有同組地產數量計算租金倍率
+      var groupInfo = groupOwnedCount(ownerIdx, t.group);
+      var ownedCount = groupInfo.cnt;
+      var totalCount = groupInfo.total;
+      
+      var multiplier = 1;
+      if (ownedCount === totalCount) {
+        // 擁有整組：租金 2x
+        multiplier = 2;
+      } else if (ownedCount === 2) {
+        // 擁有 2 個：租金 1.5x
+        multiplier = 1.5;
+      } else {
+        // 擁有 1 個：正常租金 1x
+        multiplier = 1;
+      }
+      
+      return Math.floor(base * multiplier);
+    }
+
+    // ---- 觸地邏輯 ----
+    async function onLandProperty(p,t){
+      var idx=t.idx, ownerIdx=ownerOf(idx);
+      if (ownerIdx<0){
+        if (!p.isAI){
+          var canBuy=p.cash>=t.price; $('#btnBuy').disabled=!canBuy; $('#btnSkip').disabled=false; state.awaitingBuy=true; $('#turnInfo').textContent=canBuy?('可用 $'+t.price+' 購買《'+t.name+'》'):'資金不足，無法購買。';
+        } else {
+          if (aiShouldBuyProperty(p,t)) buyProperty(p, idx, t.price); else log('🤔 '+p.name+' 放棄購買《'+t.name+'》', true);
+        }
+      } else if (ownerIdx===state.cur){
+        log(p.name+' 來到自己的地《'+t.name+'》。', !p.isAI);
+      } else {
+        var owner=state.players[ownerIdx];
+        
+        // 檢查地主是否在監獄
+        if (owner.inJail) {
+          log('《'+t.name+'》的地主 '+owner.name+' 在監獄中，免租！', !p.isAI);
+          return;
+        }
+        
+        if (owner.mortgaged.indexOf(idx)>=0){ log('《'+t.name+'》已抵押，免租。', !p.isAI); return; }
+        
+        // 計算租金和倍率
+        var base = baseRent(t.price);
+        var h = houseCount(t.idx);
+        var rent = 0;
+        var multiplierText = '';
+        
+        // 計算同色加成
+        var groupInfo = groupOwnedCount(ownerIdx, t.group);
+        var ownedCount = groupInfo.cnt;
+        var totalCount = groupInfo.total;
+        
+        var colorMultiplier = 1;
+        var colorText = '';
+        if (ownedCount === totalCount) {
+          colorMultiplier = 2;
+          colorText = '整組x2';
+        } else if (ownedCount === 2) {
+          colorMultiplier = 1.5;
+          colorText = '2個x1.5';
+        }
+        
+        if (h > 0) {
+          // 有房屋：房屋倍率 × 同色加成
+          var houseMultiplier = HOUSE_MULT[clamp(h,0,5)];
+          rent = Math.floor(base * houseMultiplier * colorMultiplier);
+          multiplierText = ' (房屋x' + houseMultiplier + (colorText ? ' × ' + colorText : '') + ')';
+        } else {
+          // 無房屋，只顯示同色倍率
+          rent = Math.floor(base * colorMultiplier);
+          multiplierText = colorText ? ' (' + colorText + ')' : '';
+        }
+        
+        rent += (owner.rentBonusTemp||0);
+        await payToPlayer(p, owner, rent, '租金'+multiplierText+'：《'+t.name+'》');
+      }
+    }
+    async function onLandStation(p,t){
+      var idx=t.idx, ownerIdx=ownerOf(idx);
+      if (ownerIdx<0){
+        var price=6600;  // $200 * 33 = $6600
+        if (!p.isAI){ $('#turnInfo').textContent='可用 $'+price+' 購買《'+t.name+'》'; state.awaitingBuy=true; $('#btnBuy').disabled=!(p.cash>=price); $('#btnSkip').disabled=false; }
+        else { if (aiShouldBuyStation(p)) buyProperty(p, idx, price); else log('🤔 '+p.name+' 放棄購買《'+t.name+'》', true); }
+      } else if (ownerIdx===state.cur){
+        log(p.name+' 來到自己的《'+t.name+'》。', !p.isAI);
+      } else {
+        var owner=state.players[ownerIdx];
+        
+        // 檢查地主是否在監獄
+        if (owner.inJail) {
+          log('《'+t.name+'》的地主 '+owner.name+' 在監獄中，免租！', !p.isAI);
+          return;
+        }
+        
+        if (owner.mortgaged.indexOf(idx)>=0){ log('《'+t.name+'》已抵押，免租。', !p.isAI); return; }
+        var ownerStations=[5,15,25,35].filter(function(s){ return owner.properties.indexOf(s)>=0 && owner.mortgaged.indexOf(s)<0; }).length;
+        var rent=STATION_RENTS[clamp(ownerStations-1,0,3)] + (owner.rentBonusTemp||0);
+        await payToPlayer(p, owner, rent, '車站租金：《'+t.name+'》');
+      }
+    }
+    async function onLandUtility(p,t,diceTotal){
+      var idx=t.idx, ownerIdx=ownerOf(idx);
+      if (ownerIdx<0){
+        var price=5000;  // $150 * 33 ≈ $5000
+        if (!p.isAI){ $('#turnInfo').textContent='可用 $'+price+' 購買《'+t.name+'》'; state.awaitingBuy=true; $('#btnBuy').disabled=!(p.cash>=price); $('#btnSkip').disabled=false; }
+        else { if (aiShouldBuyUtility(p)) buyProperty(p, idx, price); else log('🤔 '+p.name+' 放棄購買《'+t.name+'》', true); }
+      } else if (ownerIdx===state.cur){
+        log(p.name+' 來到自己的《'+t.name+'》。', !p.isAI);
+      } else {
+        var owner=state.players[ownerIdx];
+        
+        // 檢查地主是否在監獄
+        if (owner.inJail) {
+          log('《'+t.name+'》的地主 '+owner.name+' 在監獄中，免租！', !p.isAI);
+          return;
+        }
+        
+        if (owner.mortgaged.indexOf(idx)>=0){ log('《'+t.name+'》已抵押，免租。', !p.isAI); return; }
+        var both=[12,28].every(function(u){ return owner.properties.indexOf(u)>=0 && owner.mortgaged.indexOf(u)<0; });
+        var rate=both?330:132; var rent=diceTotal*rate + (owner.rentBonusTemp||0);  // 原版 10 和 4，* 33 = 330 和 132
+        await payToPlayer(p, owner, rent, '事業費用：《'+t.name+'》 '+rate+'×點數');
+      }
+    }
+
+    // ---- 付款與破產 ----
+    async function payToBank(p, amount, reason){ if (amount<=0) return; log('🏦 '+p.name+' 支付銀行 $'+amount+'（'+reason+'）', !p.isAI); await ensureCash(p, amount); if (!p.alive) return; p.cash-=amount; renderPlayers(); }
+    async function payToPlayer(payer,receiver,amount,reason){
+      if (amount<=0) return; log('💸 '+payer.name+' 支付 $'+amount+' 給 '+receiver.name+'（'+reason+'）', !payer.isAI);
+      await ensureCash(payer, amount, receiver); if (!payer.alive) return; payer.cash-=amount; receiver.cash+=amount; renderPlayers();
+    }
+    async function ensureCash(p, need, creditor){
+      if (p.cash >= need) return;
+      // 先賣屋（從高價群、房數多者開始；均衡規則反向）
+      var propWithHouses = p.properties.filter(function(idx){ return (state.houses[idx]|0) > 0; });
+      // sort by cost desc then house count desc
+      propWithHouses.sort(function(a,b){
+        var ca = buildCost(a), cb = buildCost(b);
+        var ha = houseCount(a), hb = houseCount(b);
+        if (cb!==ca) return cb-ca;
+        return hb-ha;
+      });
+      for (var i=0;i<propWithHouses.length && p.cash<need;i++){
+        var idx = propWithHouses[i];
+        if (canSellHouseHere(p, idx)){
+          state.houses[idx] = houseCount(idx)-1;
+          var val = sellValue(idx);
+          p.cash += val;
+          renderHouses(); renderPlayers();
+          log('🔧 '+p.name+' 出售一棟房（《'+tiles[idx].name+'》），回收 $'+val, !p.isAI);
+          i = -1; // 重新排序，以符合均衡賣屋
+          propWithHouses = p.properties.filter(function(x){ return (state.houses[x]|0) > 0; });
+          propWithHouses.sort(function(a,b){
+            var ca = buildCost(a), cb = buildCost(b);
+            var ha = houseCount(a), hb = houseCount(b);
+            if (cb!==ca) return cb-ca;
+            return hb-ha;
+          });
+        }
+      }
+      if (p.cash >= need) return;
+      // 再抵押
+      var candidates = p.properties.filter(function(idx){ return p.mortgaged.indexOf(idx)<0 && (state.houses[idx]|0)===0; })
+        .map(function(idx){ return {idx:idx, price:getPrice(tiles[idx])}; })
+        .sort(function(a,b){ return a.price - b.price; });
+      for (var j=0;j<candidates.length && p.cash<need;j++){
+        doMortgage(p, candidates[j].idx);
+        await sleep(60);
+      }
+      if (p.cash >= need) return;
+      // 全部手段用盡：破產
+      if (creditor){
+        for (var k=0;k<p.properties.length;k++){
+          var idx2 = p.properties[k];
+          if (creditor.properties.indexOf(idx2)<0) creditor.properties.push(idx2);
+          if (p.mortgaged.indexOf(idx2)>=0 && creditor.mortgaged.indexOf(idx2)<0) creditor.mortgaged.push(idx2);
+          if (state.houses[idx2]){ // 房屋隨產移交
+            state.houses[idx2] = state.houses[idx2]; // keep same
+          }
+        }
+      } else {
+        // 收歸銀行：清除房屋
+        p.properties.forEach(function(x){ delete state.houses[x]; });
+      }
+      p.properties = []; p.mortgaged = []; p.cash = 0; p.alive = false;
+      renderPlayers(); updateOwners(); renderHouses(); renderTokens();
+      log('💥 '+p.name+' 無力支付，宣告破產'+(creditor?('，資產移交給 '+creditor.name):'，資產收歸銀行')+'。', !p.isAI);
+    }
+
+    function doMortgage(p, idx){ var t=tiles[idx]; if (p.properties.indexOf(idx)<0 || p.mortgaged.indexOf(idx)>=0) return; if (houseCount(idx)>0) return; var val=Math.floor(getPrice(t)*0.5); p.mortgaged.push(idx); p.cash+=val; renderPlayers(); log('🏦 '+p.name+' 抵押《'+(t.name||t.label)+'》，取得 $'+val, !p.isAI); }
+    function doUnmortgage(p, idx){ var t=tiles[idx]; var mi=p.mortgaged.indexOf(idx); if (mi<0) return; var cost=Math.floor(getPrice(t)*0.5*1.1); if (p.cash<cost){ log('現金不足，無法贖回。', !p.isAI); return; } p.cash-=cost; p.mortgaged.splice(mi,1); renderPlayers(); log('💳 '+p.name+' 贖回《'+(t.name||t.label)+'》，支付 $'+cost, !p.isAI); }
+    function goToJail(p){ p.inJail=true; p.jailTurns=0; p.pos=10; renderTokens(); $('#turnInfo').textContent=p.name+' 入獄。'; }
+    // 特殊格子隨機事件系統
+    var jailVisitEvents = [
+      {text:'👮 探監時發現犯人藏有私煙，獲得線報獎金 $3300', type:'cash', value:3300, prob:0.15},
+      {text:'📚 在監獄圖書館讀到投資書籍，下次購買地產折扣 10%', type:'discount', value:0.1, prob:0.1},
+      {text:'🎂 給犯人送蛋糕，犯人感動地告訴你藏寶地點，獲得 $5000', type:'cash', value:5000, prob:0.08},
+      {text:'👮‍♀️ 與獄守聊天，獲得一張「出獄卡」', type:'jailcard', value:1, prob:0.07},
+      {text:'👀 只是來探監，沒有特別事件。', type:'none', value:0, prob:0.6}
+    ];
+    
+    var freeParkingEvents = [
+      {text:'🎰 在停車場撿到一隻賽車，賣掉獲得 $8000', type:'cash', value:8000, prob:0.12},
+      {text:'🎁 停車場舉辦抽獎活動，你中了頭獎 $10000!', type:'cash', value:10000, prob:0.08},
+      {text:'🛠️ 幫忙修車，車主感謝給了 $4000', type:'cash', value:4000, prob:0.15},
+      {text:'🎪 免費停車券，下次繳稅免費', type:'taxfree', value:1, prob:0.1},
+      {text:'🚗 在免費停車場休息片刻。', type:'none', value:0, prob:0.55}
+    ];
+    
+    var goToJailEvents = [
+      {text:'👮 被警察發現違規停車，罰款 $2000', type:'fine', value:2000, prob:0.2},
+      {text:'🚨 被檢舉逃稅，被判入獄並罰款 $3300', type:'fineheavy', value:3300, prob:0.15},
+      {text:'⚠️ 闖紅燈被拍照，罰款 $1650', type:'fine', value:1650, prob:0.25},
+      {text:'👮‍♂️ 被警察誤會，解釋後釋放，但浪費了時間', type:'none', value:0, prob:0.1},
+      {text:'👮 直接入獄，不經過起點。', type:'jail', value:0, prob:0.3}
+    ];
+    
+    function triggerRandomEvent(events) {
+      var rand = Math.random();
+      var cumulative = 0;
+      for (var i = 0; i < events.length; i++) {
+        cumulative += events[i].prob;
+        if (rand < cumulative) {
+          return events[i];
+        }
+      }
+      return events[events.length - 1];
+    }
+    
+    async function onJailVisit(p) {
+      var event = triggerRandomEvent(jailVisitEvents);
+      log(p.name + ' ' + event.text, !p.isAI);
+      if (event.type === 'cash') {
+        p.cash += event.value;
+        renderPlayers();
+      } else if (event.type === 'jailcard') {
+        p.jailFreeCards = (p.jailFreeCards || 0) + 1;
+        renderPlayers();
+      }
+    }
+    
+    async function onFreeParking(p) {
+      var event = triggerRandomEvent(freeParkingEvents);
+      log(p.name + ' ' + event.text, !p.isAI);
+      if (event.type === 'cash') {
+        p.cash += event.value;
+        renderPlayers();
+      } else if (event.type === 'taxfree') {
+        p.taxFree = (p.taxFree || 0) + 1;
+        renderPlayers();
+      }
+    }
+    
+    async function onGoToJail(p) {
+      var event = triggerRandomEvent(goToJailEvents);
+      log(p.name + ' ' + event.text, !p.isAI);
+      if (event.type === 'fine') {
+        p.cash -= event.value;
+        renderPlayers();
+        goToJail(p);
+      } else if (event.type === 'fineheavy') {
+        p.cash -= event.value;
+        renderPlayers();
+        goToJail(p);
+      } else if (event.type === 'jail') {
+        goToJail(p);
+      }
+      // type === 'none' 則什麼都不做
+    }
+
+
+    // ---- 卡牌（保留原邏輯，金額沿用新參數） ----
+    var chestDeck = shuffle([
+      {t:"cash",v:+100000,text:"城市補助，領 $100,000",rarity:"common",emoji:"🏦"},
+      {t:"cash",v:+50000,text:"退稅，領 $50,000",rarity:"common",emoji:"💵"},
+      {t:"cash",v:-50000,text:"醫療費，付 $50,000",rarity:"common",emoji:"🏥"},
+      {t:"cash",v:+80000,text:"公司紅利，領 $80,000",rarity:"rare",emoji:"💼"},
+      {t:"cash",v:-30000,text:"罰款，付 $30,000",rarity:"common",emoji:"⚠️"},
+      {t:"moveTo",idx:0,text:"前進到起點並領薪",rarity:"common",emoji:"🏁"},
+      {t:"jail",text:"直接入獄",rarity:"common",emoji:"👮"},
+      {t:"outCard",text:"獲得出獄卡",rarity:"rare",emoji:"🔑"},
+      {t:"collectFromEach",v:30000,text:"顧問費：每位玩家付你 $30,000",rarity:"epic",emoji:"💰"},
+      {t:"payToEach",v:20000,text:"捐助：你付每位玩家 $20,000",rarity:"common",emoji:"🤝"},
+      {t:"nearestUtility",text:"前進到最近的事業格（若有主付 10×點數；無主可買）",rarity:"rare",emoji:"⚡"},
+      {t:"freeRent",turns:2,text:"免租金卡（2回合）",rarity:"epic",emoji:"🌟"},
+      {t:"teleport",text:"傳送卡：傳送到任意格子",rarity:"epic",emoji:"✨"},
+      {t:"cash",v:+200000,text:"遺產繼承，獲得 $200,000",rarity:"epic",emoji:"💸"},
+      {t:"allLosePercent",percent:10,text:"📉 經濟蕭條：所有玩家損失 10% 現金",rarity:"rare",emoji:"📉"},
+      {t:"allGain",v:100000,text:"🎉 景氣復焧：所有玩家獲得 $100,000",rarity:"rare",emoji:"🎉"},
+      {t:"allPay",v:200000,text:"📊 稅務改革：所有玩家支付 $200,000",rarity:"rare",emoji:"📊"}
+    ]);
+    var chanceDeck = shuffle([
+      {t:"moveTo",idx:0,text:"前進到起點並領薪",rarity:"common",emoji:"🏁"},
+      {t:"nearestStation",text:"前進到最近的車站（2×租金）",rarity:"rare",emoji:"🚉"},
+      {t:"jail",text:"直接入獄",rarity:"common",emoji:"🚔"},
+      {t:"outCard",text:"獲得出獄卡",rarity:"rare",emoji:"🔑"},
+      {t:"cash",v:+80000,text:"抽中彩券，領 $80,000",rarity:"common",emoji:"🎰"},
+      {t:"cash",v:-40000,text:"收到罰單，付 $40,000",rarity:"common",emoji:"🚨"},
+      {t:"back3",text:"回退 3 格",rarity:"common",emoji:"⏪"},
+      {t:"payTax",v:100000,text:"稅務稽核，支付 $100,000",rarity:"common",emoji:"📋"},
+      {t:"moveTo",idx:24,text:"",rarity:"common",emoji:"🎯"},
+      {t:"moveTo",idx:39,text:"",rarity:"common",emoji:"🎯"},
+      {t:"marketRush",text:"收租大月：本回合收租 +$20,000",bonus:20000,rarity:"rare",emoji:"📈"},
+      {t:"bonusNextGo",text:"下次經過起點 +$50,000",rarity:"common",emoji:"💰"},
+      {t:"cash",v:+150000,text:"投資獲利，獲得 $150,000",rarity:"rare",emoji:"📉"},
+      {t:"doubleRent",turns:1,text:"雙倍收租卡（1回合）",rarity:"epic",emoji:"💎"},
+      {t:"swapPosition",text:"與任意玩家交換位置",rarity:"epic",emoji:"🔄"},
+      {t:"protection",turns:2,text:"保護卡：免疫負面卡牙（2回合）",rarity:"epic",emoji:"🛡️"},
+      {t:"allGain",v:150000,text:"🏛️ 政府補助：所有玩家獲得 $150,000",rarity:"rare",emoji:"🏛️"},
+      {t:"allLosePercent",percent:20,text:"🌪️ 金融風暴：所有玩家損失 20% 現金",rarity:"epic",emoji:"🌪️"},
+      {t:"propertyBonus",v:50000,text:"🏠 房地產熱潮：每個地產獲得 $50,000",rarity:"rare",emoji:"🏠"}
+    ]);
+    async function drawCard(p, deck, name, diceTotal){
+      var card=deck.shift(); deck.push(card); 
+      
+      // 如果是 moveTo 類型且 text 為空，動態生成地點名稱
+      if (card.t === "moveTo" && card.text === "" && card.idx !== undefined) {
+        card.text = "前進到『" + tiles[card.idx].name + "』";
+      }
+      
+      // 記錄到收藏
+      var collectionKey = name === '機會' ? 'chance' : 'chest';
+      if (!state.cardCollection[collectionKey][card.text]) {
+        state.cardCollection[collectionKey][card.text] = {
+          card: card,
+          count: 0,
+          firstDrawn: Date.now()
+        };
+      }
+      state.cardCollection[collectionKey][card.text].count++;
+      
+      // 顯示華麗卡片
+      await showFancyCard(card, name);
+      
+      log('📏 '+p.name+' 抽到 '+name+' 卡：'+card.text, !p.isAI);
+      
+      // 區分立即生效卡和可持有卡
+      var immediateCards = ['cash', 'jail', 'collectFromEach', 'payToEach', 'payTax', 'marketRush', 'bonusNextGo', 'allLosePercent', 'allGain', 'allPay', 'propertyBonus'];
+      
+      if (immediateCards.indexOf(card.t) >= 0) {
+        // 立即生效的卡片
+        switch(card.t){
+          case "cash": 
+            if (card.v>=0){ 
+              p.cash+=card.v; 
+              renderPlayers(); 
+            } else { 
+              await payToBank(p, -card.v, name); 
+            } 
+            break;
+          case "jail": goToJail(p); break;
+          case "collectFromEach": 
+            for (var i=0;i<state.players.length;i++){ 
+              var other=state.players[i]; 
+              if (other===p || !other.alive) continue; 
+              await payToPlayer(other, p, card.v, name+'卡'); 
+            } 
+            break;
+          case "payToEach": 
+            for (var j=0;j<state.players.length;j++){ 
+              var o=state.players[j]; 
+              if (o===p || !o.alive) continue; 
+              await payToPlayer(p, o, card.v, name+'卡'); 
+            } 
+            break;
+          case "payTax": await payToBank(p, card.v, name+'卡'); break;
+          case "marketRush": 
+            p.rentBonusTemp += (card.bonus||25); 
+            $('#turnInfo').textContent='本回合收租 +$825'; 
+            break;
+          case "bonusNextGo": 
+            if (state.bonusNextGo.indexOf(p.id)<0) state.bonusNextGo.push(p.id); 
+            break;
+          case "allLosePercent":
+            for (var k=0;k<state.players.length;k++){ 
+              var pl=state.players[k]; 
+              if (!pl.alive) continue; 
+              var loss = Math.floor(pl.cash * (card.percent / 100));
+              pl.cash -= loss;
+              log('📉 '+pl.name+' 損失 $'+loss, !pl.isAI);
+            }
+            renderPlayers();
+            break;
+          case "allGain":
+            for (var l=0;l<state.players.length;l++){ 
+              var plr=state.players[l]; 
+              if (!plr.alive) continue; 
+              plr.cash += card.v;
+              log('🎉 '+plr.name+' 獲得 $'+card.v, !plr.isAI);
+            }
+            renderPlayers();
+            break;
+          case "allPay":
+            for (var m=0;m<state.players.length;m++){ 
+              var ply=state.players[m]; 
+              if (!ply.alive) continue; 
+              await payToBank(ply, card.v, name+'卡');
+            }
+            break;
+          case "propertyBonus":
+            for (var n=0;n<state.players.length;n++){ 
+              var plyr=state.players[n]; 
+              if (!plyr.alive) continue; 
+              var propCount = plyr.properties.length;
+              var bonus = propCount * card.v;
+              if (bonus > 0) {
+                plyr.cash += bonus;
+                log('🏠 '+plyr.name+' 擁有 '+propCount+' 個地產，獲得 $'+bonus, !plyr.isAI);
+              }
+            }
+            renderPlayers();
+            break;
+        }
+      } else {
+        // 可持有的卡片，放入背包
+        var cardCopy = JSON.parse(JSON.stringify(card));
+        cardCopy.id = uuid();
+        cardCopy.deckName = name;
+        cardCopy.diceTotal = diceTotal;
+        p.heldCards.push(cardCopy);
+        log('🎒 '+p.name+' 將卡片放入背包：'+card.text, !p.isAI);
+        renderPlayers();
+      }
+    }
+    // 華麗卡牌顯示
+    async function showFancyCard(card, deckName) {
+      return new Promise(function(resolve) {
+        var rarityColors = {
+          common: 'linear-gradient(135deg, #a8b2d1 0%, #8892b0 100%)',
+          rare: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+          epic: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)'
+        };
+        
+        var rarityNames = {
+          common: '普通',
+          rare: '稀有',
+          epic: '史詩'
+        };
+        
+        var rarity = card.rarity || 'common';
+        var bgColor = rarityColors[rarity];
+        var rarityName = rarityNames[rarity];
+        
+        var overlay = document.createElement('div');
+        overlay.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0,0,0,0.8);
+          z-index: 20000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          animation: fadeIn 0.3s ease-out;
+        `;
+        
+        var cardEl = document.createElement('div');
+        cardEl.style.cssText = `
+          width: 320px;
+          height: 450px;
+          background: ${bgColor};
+          border-radius: 20px;
+          padding: 30px;
+          box-shadow: 0 30px 80px rgba(0,0,0,0.6), 0 0 0 3px rgba(255,255,255,0.3);
+          animation: cardFlip 0.8s ease-out;
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: space-between;
+          color: white;
+          text-align: center;
+        `;
+        
+        cardEl.innerHTML = `
+          <div style="position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.3); padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold;">
+            ${rarityName}
+          </div>
+          <div style="font-size: 14px; font-weight: bold; opacity: 0.9; margin-top: 10px;">
+            ${deckName}卡
+          </div>
+          <div style="font-size: 100px; margin: 20px 0; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));">
+            ${card.emoji || '🎴'}
+          </div>
+          <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 15px;">
+            <div style="font-size: 28px; font-weight: bold; text-shadow: 0 4px 8px rgba(0,0,0,0.3);">
+              ${card.text.split('：')[0].split('，')[0]}
+            </div>
+            <div style="font-size: 16px; opacity: 0.95; line-height: 1.5; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 10px;">
+              ${card.text}
+            </div>
+          </div>
+          <button onclick="this.parentElement.parentElement.remove()" style="
+            width: 100%;
+            padding: 15px;
+            background: rgba(255,255,255,0.9);
+            color: #333;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+            transition: all 0.2s;
+          " onmouseover="this.style.background='white'" onmouseout="this.style.background='rgba(255,255,255,0.9)'">
+            確定
+          </button>
+        `;
+        
+        overlay.appendChild(cardEl);
+        document.body.appendChild(overlay);
+        
+        playSound('purchase');
+        
+        overlay.querySelector('button').addEventListener('click', function() {
+          resolve();
+        });
+        
+        setTimeout(function() {
+          if (overlay.parentElement) {
+            overlay.remove();
+            resolve();
+          }
+        }, 6000);
+      });
+    }
+    
+    // 傳送界面
+    async function showTeleportUI(p) {
+      return new Promise(function(resolve) {
+        var modal = document.createElement('div');
+        modal.style.cssText = `
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: white;
+          padding: 30px;
+          border-radius: 15px;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+          z-index: 20000;
+          max-width: 400px;
+        `;
+        
+        var options = '';
+        for (var i = 0; i < 40; i++) {
+          var tile = tiles[i];
+          var label = tile.name || tile.label || ('格子 ' + i);
+          options += '<option value="' + i + '">' + i + ': ' + label + '</option>';
+        }
+        
+        modal.innerHTML = `
+          <h3 style="margin-bottom: 15px; color: #333;">🌀 選擇傳送目標</h3>
+          <select id="teleportTarget" style="width: 100%; padding: 10px; font-size: 16px; margin-bottom: 15px; border-radius: 8px; border: 2px solid #ddd;">
+            ${options}
+          </select>
+          <button onclick="document.getElementById('teleportConfirm').click()" style="
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+          " id="teleportConfirm">確定傳送</button>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        document.getElementById('teleportConfirm').addEventListener('click', async function() {
+          var target = parseInt(document.getElementById('teleportTarget').value);
+          modal.remove();
+          await moveTo(p, target, false);
+          await resolveTile(p, 0);
+          resolve();
+        }, {once: true});
+      });
+    }
+    
+    // 交換位置界面
+    async function showSwapUI(p) {
+      return new Promise(function(resolve) {
+        var modal = document.createElement('div');
+        modal.style.cssText = `
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: white;
+          padding: 30px;
+          border-radius: 15px;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+          z-index: 20000;
+          max-width: 400px;
+        `;
+        
+        var options = '';
+        state.players.forEach(function(player, idx) {
+          if (idx !== state.cur && player.alive) {
+            options += '<option value="' + idx + '">' + player.name + ' (位置: ' + player.pos + ')</option>';
+          }
+        });
+        
+        modal.innerHTML = `
+          <h3 style="margin-bottom: 15px; color: #333;">🔄 選擇交換對象</h3>
+          <select id="swapTarget" style="width: 100%; padding: 10px; font-size: 16px; margin-bottom: 15px; border-radius: 8px; border: 2px solid #ddd;">
+            ${options}
+          </select>
+          <button onclick="document.getElementById('swapConfirm').click()" style="
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+          " id="swapConfirm">確定交換</button>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        document.getElementById('swapConfirm').addEventListener('click', async function() {
+          var targetIdx = parseInt(document.getElementById('swapTarget').value);
+          var targetPlayer = state.players[targetIdx];
+          var tempPos = p.pos;
+          modal.remove();
+          
+          await moveTo(p, targetPlayer.pos, false);
+          await moveTo(targetPlayer, tempPos, false);
+          
+          log(p.name + ' 與 ' + targetPlayer.name + ' 交換了位置', true);
+          await resolveTile(p, 0);
+          resolve();
+        }, {once: true});
+      });
+    }
+    
+        async function moveTo(p, idx, passGoCredit){ 
+          var startPos = p.pos;
+          while (p.pos!==idx){ 
+            p.pos=(p.pos+1)%40; 
+            // 只有當起點不是目的地時，經過起點才加錢
+            if (p.pos===0 && passGoCredit && idx !== 0){ 
+              var bonus=START_SALARY; 
+              var bi=state.bonusNextGo.indexOf(p.id); 
+              if (bi>=0){ bonus+=3300; state.bonusNextGo.splice(bi,1); } 
+              p.cash+=bonus; 
+              renderPlayers(); 
+              log('💵 '+p.name+' 經過起點，領 $'+bonus, !p.isAI); 
+            } 
+            renderTokens(); 
+            await sleep(80); 
+          } 
+        }
+    async function moveToNearest(p, types, diceTotal, thenResolve, doubleRentOnStation){
+      var i=p.pos; while (true){ i=(i+1)%40; var t=tiles[i]; if (types.indexOf(t.type)>=0){ await moveTo(p, i, true);
+        if (thenResolve){ if (t.type==="UTILITY") await onLandUtility(p, t, diceTotal); else if (t.type==="STATION"){ var ownerIdx=ownerOf(t.idx); if (doubleRentOnStation && ownerIdx>=0 && ownerIdx!==state.cur){ var owner=state.players[ownerIdx]; if (owner.mortgaged.indexOf(t.idx)<0){ var ownerStations=[5,15,25,35].filter(function(s){ return owner.properties.indexOf(s)>=0 && owner.mortgaged.indexOf(s)<0; }).length; var rent=STATION_RENTS[clamp(ownerStations-1,0,3)]; await payToPlayer(p, owner, rent*2, '雙倍車站租金（機會卡）《'+t.name+'》'); return; } } await onLandStation(p, t); } } return; } } }
+    async function moveBack(p, steps){ for (var i=0;i<steps;i++){ p.pos=(p.pos-1+40)%40; renderTokens(); await sleep(80); } }
+
+    // ---- 監獄 ----
+    function showJailOptions(p){
+      if (p.isAI) return;
+      var canPay=p.cash>=JAIL_FINE;
+      
+      // 檢查背包中是否有出獄卡
+      var hasOutCard = (p.heldCards || []).some(function(card) { return card.t === 'outCard'; });
+      
+      var html='<p>你在獄中，可選擇：</p><ul><li>支付 $'+JAIL_FINE+' 立即出獄並擲骰</li><li>'+(hasOutCard?'使用背包中的出獄卡':'嘗試擲出雙骰（最多 3 回合）')+'</li></ul><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;"><button id="jPay" '+(canPay?'':'disabled')+' class="ok">付保釋金</button>'+(hasOutCard?'<button id="jCard" class="primary">打開背包</button>':'')+' <button id="jTry" class="primary">嘗試擲骰</button></div>';
+      showModal(html,false).then(function(){});
+      var jPay=document.getElementById('jPay'); if (jPay) jPay.addEventListener('click', async function(){ await payToBank(p,JAIL_FINE,'保釋金'); if (!p.alive) return; p.inJail=false; p.jailTurns=0; document.getElementById('modal').classList.add('hidden'); await onRoll(); }, {once:true});
+      var jCard=document.getElementById('jCard'); if (jCard) jCard.addEventListener('click', function(){ document.getElementById('modal').classList.add('hidden'); showCardBag(); }, {once:true});
+      var jTry=document.getElementById('jTry'); if (jTry) jTry.addEventListener('click', async function(){ document.getElementById('modal').classList.add('hidden'); var d=rollDice(), d1=d[0], d2=d[1], dbl=d1===d2; if (dbl){ p.inJail=false; p.jailTurns=0; log(p.name+' 擲出雙骰，出獄並移動 '+(d1+d2)+' 步。', !p.isAI); await moveSteps(p, d1+d2); await resolveTile(p, d1+d2); document.getElementById('btnEnd').disabled=false; } else { p.jailTurns++; log(p.name+' 未擲出雙骰（第 '+p.jailTurns+'/3 回合）。', !p.isAI); if (p.jailTurns>=3){ await payToBank(p, JAIL_FINE, '保釋金'); if (!p.alive){ document.getElementById('btnEnd').disabled=false; return; } p.inJail=false; p.jailTurns=0; await onRoll(); } else { document.getElementById('btnEnd').disabled=false; } } }, {once:true});
+    }
+
+    // ---- 資產面板（建屋） ----
+    function showAssets(){
+      var wrap=document.getElementById('assetsBody'); var me=state.players[state.cur];
+      var rows = [];
+      me.properties.forEach(function(idx){
+        var t=tiles[idx];
+        var mort = me.mortgaged.indexOf(idx)>=0;
+        var hc = houseCount(idx);
+        var canB = canBuildHere(me, idx);
+        var canS = canSellHouseHere(me, idx);
+        var cost = buildCost(idx);
+        rows.push('<tr><td>'+t.name+'</td><td>'+(t.group||'-')+'</td><td>'+(mort?'抵押':'正常')+'</td><td>'+hc+(hc===5?'（🏨）':'')+'</td><td>$'+cost+'</td><td><button data-op="build" data-idx="'+idx+'" '+(canB?'':'disabled')+'>＋建屋</button><button data-op="sell" data-idx="'+idx+'" '+(canS?'':'disabled')+'>－賣屋</button>'+(mort?'' : ' <button data-op="mortgage" data-idx="'+idx+'">抵押</button>')+(mort?(' <button data-op="unmortgage" data-idx="'+idx+'">贖回</button>'):'')+'</td></tr>');
+      });
+      var html = '<table class="asset-table"><thead><tr><th>地名</th><th>色組</th><th>狀態</th><th>房數</th><th>建屋費</th><th>操作</th></tr></thead><tbody>'+rows.join('')+'</tbody></table>';
+      wrap.innerHTML = html;
+      wrap.querySelectorAll('button[data-op]').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          var op = btn.getAttribute('data-op'); var idx = Number(btn.getAttribute('data-idx'));
+          if (op==='build'){ tryBuild(me, idx); }
+          else if (op==='sell'){ trySellHouse(me, idx); }
+          else if (op==='mortgage'){ doMortgage(me, idx); }
+          else if (op==='unmortgage'){ doUnmortgage(me, idx); }
+          showAssets(); renderPlayers(); updateOwners(); renderHouses();
+        });
+      });
+      document.getElementById('assetsPanel').classList.remove('hidden');
+    }
+    function tryBuild(p, idx){
+      if (!canBuildHere(p, idx)) return;
+      var cost = buildCost(idx);
+      if (p.cash < cost){ log('現金不足，無法建屋。', !p.isAI); return; }
+      var oldCount = houseCount(idx);
+      p.cash -= cost; 
+      state.houses[idx] = oldCount + 1;
+      state.hasUpgradedThisTurn = true; // 記錄本回合已升級
+      renderPlayers(); renderHouses(); 
+      log('🏠 '+p.name+' 在《'+tiles[idx].name+'》建造第 '+(oldCount+1)+' 棟（現有 '+(oldCount+1)+'）', !p.isAI);
+    }
+    function trySellHouse(p, idx){
+      if (!canSellHouseHere(p, idx)) return;
+      state.houses[idx] = houseCount(idx)-1;
+      var val = sellValue(idx); p.cash += val;
+      renderPlayers(); renderHouses(); log('🔧 '+p.name+' 賣出 1 棟（《'+tiles[idx].name+'》），回收 $'+val, !p.isAI);
+    }
+
+    // ---- 卡片背包系統 ----
+    function showCardBag() {
+      var p = state.players[state.cur];
+      var heldCards = p.heldCards || [];
+      
+      if (heldCards.length === 0) {
+        showModal('<h2 style="text-align:center;">🎒 卡片背包</h2><p style="text-align:center; color:#666; margin:30px 0;">背包是空的，快去抽卡吧！</p><button onclick="document.getElementById(\'modal\').classList.add(\'hidden\')" style="padding:12px 30px; background:#667eea; color:white; border:none; border-radius:10px; font-size:16px; font-weight:bold; cursor:pointer; width:100%;">關閉</button>', false);
+        return;
+      }
+      
+      var cardsHTML = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; margin-top: 15px;">';
+      
+      heldCards.forEach(function(card, index) {
+        var rarityColors = {
+          common: 'linear-gradient(135deg, #a8b2d1 0%, #8892b0 100%)',
+          rare: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+          epic: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)'
+        };
+        var bgColor = rarityColors[card.rarity || 'common'];
+        
+        var canUse = canUseCard(p, card);
+        var useButtonStyle = canUse ? 
+          'background:#10b981; cursor:pointer;' : 
+          'background:#ccc; cursor:not-allowed; opacity:0.5;';
+        
+        cardsHTML += `
+          <div style="background: ${bgColor}; padding: 15px; border-radius: 10px; color: white; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+            <div style="font-size: 40px; text-align:center; margin-bottom: 8px;">${card.emoji || '🎴'}</div>
+            <div style="font-size: 14px; font-weight: bold; text-align:center; margin-bottom: 8px;">${card.text}</div>
+            <div style="font-size: 11px; opacity: 0.9; text-align:center; margin-bottom: 10px;">來源：${card.deckName}</div>
+            <button onclick="useCardFromBag(${index})" ${canUse ? '' : 'disabled'} style="${useButtonStyle} padding:8px 15px; color:white; border:none; border-radius:6px; font-size:13px; font-weight:bold; width:100%;">
+              ${canUse ? '使用卡片' : '無法使用'}
+            </button>
+          </div>
+        `;
+      });
+      cardsHTML += '</div>';
+      
+      var html = `
+        <div style="max-height: 70vh; overflow-y: auto;">
+          <h2 style="color: #333; margin-bottom: 10px;">🎒 卡片背包</h2>
+          <div style="font-size: 14px; color: #666; margin-bottom: 15px;">
+            持有卡片：${heldCards.length} 張
+          </div>
+          ${cardsHTML}
+        </div>
+        <button onclick="document.getElementById('modal').classList.add('hidden')" style="
+          margin-top: 20px;
+          padding: 12px 30px;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          border: none;
+          border-radius: 10px;
+          font-size: 16px;
+          font-weight: bold;
+          cursor: pointer;
+          width: 100%;
+        ">關閉</button>
+      `;
+      
+      showModal(html, false);
+    }
+    
+    function canUseCard(p, card) {
+      if (card.t === 'outCard') {
+        return p.inJail;
+      }
+      
+      if (state.cur !== state.players.indexOf(p)) {
+        return false;
+      }
+      
+      if (p.inJail && ['moveTo', 'nearestUtility', 'nearestStation', 'back3', 'teleport', 'swapPosition'].indexOf(card.t) >= 0) {
+        return false;
+      }
+      
+      return true;
+    }
+    
+    window.useCardFromBag = async function(cardIndex) {
+      var p = state.players[state.cur];
+      var card = p.heldCards[cardIndex];
+      
+      if (!canUseCard(p, card)) {
+        return;
+      }
+      
+      document.getElementById('modal').classList.add('hidden');
+      
+      p.heldCards.splice(cardIndex, 1);
+      
+      log('🎴 '+p.name+' 使用卡片：'+card.text, !p.isAI);
+      
+      await executeCardEffect(p, card);
+      
+      renderPlayers();
+    };
+    
+    async function executeCardEffect(p, card) {
+      switch(card.t){
+        case "moveTo": 
+          await moveTo(p, card.idx, true); 
+          await resolveTile(p, 0); 
+          break;
+        case "outCard": 
+          if (p.inJail) {
+            p.inJail = false;
+            p.jailTurns = 0;
+            log(p.name + ' 使用出獄卡出獄！', !p.isAI);
+            renderPlayers();
+          }
+          break;
+        case "nearestUtility": 
+          await moveToNearest(p, ["UTILITY"], card.diceTotal || 0, true); 
+          break;
+        case "nearestStation": 
+          await moveToNearest(p, ["STATION"], card.diceTotal || 0, true, true); 
+          break;
+        case "back3": 
+          await moveBack(p, 3); 
+          await resolveTile(p, card.diceTotal || 0); 
+          break;
+        case "freeRent": 
+          p.freeRentTurns = (p.freeRentTurns || 0) + (card.turns || 1);
+          log(p.name + ' 獲得免租金卡（' + card.turns + '回合）', !p.isAI);
+          break;
+        case "doubleRent":
+          p.doubleRentTurns = (p.doubleRentTurns || 0) + (card.turns || 1);
+          log(p.name + ' 獲得雙倍收租卡（' + card.turns + '回合）', !p.isAI);
+          break;
+        case "teleport":
+          if (!p.isAI) {
+            await showTeleportUI(p);
+          } else {
+            var randomPos = Math.floor(Math.random() * 40);
+            await moveTo(p, randomPos, false);
+            await resolveTile(p, card.diceTotal || 0);
+          }
+          break;
+        case "swapPosition":
+          if (!p.isAI) {
+            await showSwapUI(p);
+          }
+          break;
+        case "protection":
+          p.protectionTurns = (p.protectionTurns || 0) + (card.turns || 1);
+          log(p.name + ' 獲得保護卡（' + card.turns + '回合）', !p.isAI);
+          break;
+      }
+    }
+    
+
+    // ---- AI 策略（升級版本） ----
+    function aiShouldBuyProperty(p, t){
+      var reserve = 500;
+      var willHave = p.cash - t.price;
+      var same = tiles.filter(function(x){ return x.type==="PROPERTY" && x.group===t.group; });
+      var owned = same.filter(function(x){ return p.properties.indexOf(x.idx)>=0 && p.mortgaged.indexOf(x.idx)<0; }).length;
+      var total = same.length;
+      if (owned+1 === total) return p.cash >= t.price; // 湊滿色組
+      return willHave >= reserve;
+    }
+    function aiShouldBuyStation(p){ return p.cash >= 600 || [5,15,25,35].some(function(s){ return p.properties.indexOf(s)>=0; }); }
+    function aiShouldBuyUtility(p){ return p.cash >= 400 || [12,28].some(function(u){ return p.properties.indexOf(u)>=0; }); }
+
+    async function aiTurn(){
+      // 模擬思考時間
+      await sleep(300 + Math.random() * 700);
+      var p=state.players[state.cur];
+      await sleep(400);
+      // 監獄邏輯沿用
+      if (p.inJail){
+        if (p.jailTurns<2){
+          var d=rollDice(), d1=d[0], d2=d[1], dbl=d1===d2;
+          if (dbl){ 
+            p.inJail=false; 
+            p.jailTurns=0; 
+            log(p.name+' 擲出雙骰出獄，移動 '+(d1+d2)+' 步。', true); 
+            await moveSteps(p, d1+d2); 
+            await resolveTile(p, d1+d2); 
+            
+            // 檢查是否停在自己的地產上
+            var currentTile = tiles[p.pos];
+            var isOnOwnProperty = false;
+            if (currentTile.type === "PROPERTY" || currentTile.type === "STATION" || currentTile.type === "UTILITY") {
+              var ownerIdx = ownerOf(p.pos);
+              if (ownerIdx === state.cur) {
+                isOnOwnProperty = true;
+              }
+            }
+            
+            if (isOnOwnProperty) {
+              await aiUnmortgageIfRich(p);
+              aiAutoBuild(p);
+            }
+            
+            endTurn(); 
+            return;
+          }
+          else { p.jailTurns++; log(p.name+' 嘗試失敗（第 '+p.jailTurns+'/3 回合）', true); }
+        } else {
+          await ensureCash(p, JAIL_FINE);
+          if (!p.alive){ endTurn(); return; }
+          await payToBank(p, JAIL_FINE, "保釋金");
+          if (!p.alive){ endTurn(); return; }
+          p.inJail=false; p.jailTurns=0;
+          var res = await onRoll();
+          if (res && res.again){ await sleep(400); await onRoll(); }
+          
+          // 檢查是否停在自己的地產上
+          var currentTile = tiles[p.pos];
+          var isOnOwnProperty = false;
+          if (currentTile.type === "PROPERTY" || currentTile.type === "STATION" || currentTile.type === "UTILITY") {
+            var ownerIdx = ownerOf(p.pos);
+            if (ownerIdx === state.cur) {
+              isOnOwnProperty = true;
+            }
+          }
+          
+          if (isOnOwnProperty) {
+            await aiUnmortgageIfRich(p);
+            aiAutoBuild(p);
+          }
+          
+          endTurn(); return;
+        }
+        
+        // 在監獄中不能贖回和建造
+        // await aiUnmortgageIfRich(p);
+        // aiAutoBuild(p);
+        
+        endTurn(); return;
+      }
+      // 普通回合
+      var r = await onRoll();
+      if (r && r.again){ await sleep(400); r = await onRoll(); if (r && r.again){ await sleep(400); await onRoll(); } }
+      
+      // 檢查是否停在自己的地產上
+      var currentTile = tiles[p.pos];
+      var isOnOwnProperty = false;
+      if (currentTile.type === "PROPERTY" || currentTile.type === "STATION" || currentTile.type === "UTILITY") {
+        var ownerIdx = ownerOf(p.pos);
+        if (ownerIdx === state.cur) {
+          isOnOwnProperty = true;
+        }
+      }
+      
+      // 只有停在自己地產上時，才能贖回和建造
+      if (isOnOwnProperty) {
+        await aiUnmortgageIfRich(p);
+        aiAutoBuild(p);
+      }
+      
+      endTurn();
+    }
+    async function aiUnmortgageIfRich(p){
+      var reserve = 600;
+      var list = p.mortgaged.slice().sort(function(a,b){ return getPrice(tiles[a]) - getPrice(tiles[b]); });
+      for (var i=0;i<list.length;i++){
+        var idx=list[i]; var cost=Math.floor(getPrice(tiles[idx])*0.5*1.1);
+        if (p.cash - cost >= reserve) doUnmortgage(p, idx);
+      }
+    }
+    function aiAutoBuild(p){
+      // AI 只能在當前停留的地產上建造房屋，且每次只能建造一棟
+      var currentPos = p.pos;
+      var currentTile = tiles[currentPos];
+      
+      // 檢查當前位置是否為地產類型
+      if (currentTile.type !== "PROPERTY") return;
+      
+      // 檢查是否擁有當前地產
+      if (p.properties.indexOf(currentPos) < 0) return;
+      
+      // 檢查是否被抵押
+      if (p.mortgaged.indexOf(currentPos) >= 0) return;
+      
+      // 跳過本回合剛購買的地產
+      if (state.justBought.indexOf(currentPos) >= 0) return;
+      
+      // 檢查是否已經建滿 5 棟
+      if (houseCount(currentPos) >= 5) return;
+      
+      // 檢查是否有足夠現金和是否可以建造
+      if (p.cash < buildCost(currentPos)) return;
+      if (!canBuildHere(p, currentPos)) return;
+      
+      // 只建造一棟
+      var cost = buildCost(currentPos);
+      p.cash -= cost;
+      var oldCount = houseCount(currentPos);
+      state.houses[currentPos] = oldCount + 1;
+      state.hasUpgradedThisTurn = true;
+      renderPlayers(); renderHouses();
+      log('🏠 '+p.name+' 在《'+tiles[currentPos].name+'》建造第 '+(oldCount+1)+' 棟（現有 '+(oldCount+1)+'）', false);
+    }
+
+    // ---- 事件綁定與存檔 ----
+    document.getElementById('btnRoll').addEventListener('click', onRoll);
+    document.getElementById('btnEnd').addEventListener('click', endTurn);
+    document.getElementById('btnBuy').addEventListener('click', function(){ if (!state.awaitingBuy) return; var p=state.players[state.cur]; var t=tiles[p.pos]; var price=(t.type==="PROPERTY")?t.price:(t.type==="STATION"?6600:5000); buyProperty(p, t.idx, price); state.awaitingBuy=false; $('#btnBuy').disabled=true; $('#btnSkip').disabled=true; $('#btnEnd').disabled=false; });
+    document.getElementById('btnSkip').addEventListener('click', function(){ state.awaitingBuy=false; $('#btnBuy').disabled=true; $('#btnSkip').disabled=true; $('#btnEnd').disabled=false; });
+    document.getElementById('btnReset').addEventListener('click', function(){ 
+      showPlayerCountSelection();
+    });
+    document.getElementById('btnAssets').addEventListener('click', showAssets);
+    document.getElementById('btnCollection').addEventListener('click', showCardBag);
+    document.getElementById('btnBuild').addEventListener('click', function(){ 
+      var p = state.players[state.cur];
+      var currentTile = tiles[p.pos];
+      
+      // 檢查是否踩在自己的地產上
+      if (currentTile.type !== "PROPERTY") {
+        alert('必須站在自己的地產上才能升級房屋！');
+        return;
+      }
+      
+      if (p.properties.indexOf(p.pos) < 0) {
+        alert('這不是你的地產！');
+        return;
+      }
+      
+      // 顯示當前地產的升級選項
+      showBuildUI(p, p.pos);
     });
     
-    document.getElementById('rollBtn').addEventListener('click', () => {
-      log('--- 點擊擲骰按鈕 ---');
-      playSound('roll');
-    });
-    
-    document.getElementById('moveBtn').addEventListener('click', () => {
-      log('--- 點擊移動按鈕 ---');
-      playSound('move');
-    });
-    
-    log('🎮 音效測試頁面已載入');
+    // ---- 單個地產升級界面 ----
+    function showBuildUI(p, idx){
+      var t = tiles[idx];
+      var mort = p.mortgaged.indexOf(idx) >= 0;
+      var h = houseCount(idx);
+      var cost = buildCost(idx);
+      var canBuild = !mort && h < 5 && canBuildHere(p, idx) && p.cash >= cost;
+      var canSell = h > 0;
+      
+      // 檢查是否為本回合購買
+      if (state.justBought.indexOf(idx) >= 0) {
+        alert('本回合剛購買的地產無法立即升級，請下次走到時再升級！');
+        return;
+      }
+      
+      // 檢查本回合是否已經升級過
+      if (state.hasUpgradedThisTurn) {
+        alert('本回合已經升級過一次，請下回合再升級！');
+        return;
+      }
+      
+      var html = '<h3>🏠 ' + t.name + ' 房屋管理</h3>';
+      html += '<p>當前房屋數：' + (h === 5 ? '旅館' : h + ' 棟') + '</p>';
+      html += '<p>你的現金：$' + p.cash + '</p>';
+      
+      if (mort) {
+        html += '<p style="color:orange;">此地產已抵押，無法建造房屋</p>';
+      } else {
+        html += '<p>建造費用：$' + cost + '</p>';
+        html += '<p>出售價值：$' + sellValue(idx) + '</p>';
+      }
+      
+      html += '<div style="display:flex;gap:8px;margin-top:12px;">';
+      if (canBuild) {
+        html += '<button id="buildBtn" class="ok">建造 +1</button>';
+      }
+      if (canSell) {
+        html += '<button id="sellBtn" class="danger">出售 -1</button>';
+      }
+      html += '<button id="closeBtn">關閉</button>';
+      html += '</div>';
+      
+      showModal(html, false);
+      
+      var buildBtn = document.getElementById('buildBtn');
+      if (buildBtn) {
+        buildBtn.addEventListener('click', function(){
+          tryBuild(p, idx);
+          document.getElementById('modal').classList.add('hidden');
+          renderPlayers();
+          updateOwners();
+          renderHouses();
+        });
+      }
+      
+      var sellBtn = document.getElementById('sellBtn');
+      if (sellBtn) {
+        sellBtn.addEventListener('click', function(){
+          trySellHouse(p, idx);
+          document.getElementById('modal').classList.add('hidden');
+          renderPlayers();
+          updateOwners();
+          renderHouses();
+        });
+      }
+      
+      var closeBtn = document.getElementById('closeBtn');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', function(){
+          document.getElementById('modal').classList.add('hidden');
+        });
+      }
+    }
+    document.getElementById('btnCloseAssets').addEventListener('click', function(){ document.getElementById('assetsPanel').classList.add('hidden'); });
+
+    function buyProperty(p, idx, priceOverride){ var t=tiles[idx]; var price=priceOverride!=null?priceOverride:(t.type==="PROPERTY"?t.price:(t.type==="STATION"?6600:5000)); if (p.cash<price){ log('資金不足，無法購買。', !p.isAI); return; } p.cash-=price; p.properties.push(idx); state.justBought.push(idx); updateOwners(); renderPlayers(); log('📝 '+p.name+' 以 $'+price+' 購得《'+(t.name||t.label)+'》', !p.isAI); }
+
+    document.getElementById('btnSave').addEventListener('click', function(){ try{ var save = JSON.stringify(state); localStorage.setItem("tycoon_save_v23", save); log("💾 已存檔（v23）。", false); }catch(e){ diagERR("存檔失敗："+(e&&e.message||e)); } });
+    document.getElementById('btnLoad').addEventListener('click', function(){ try{ var s = localStorage.getItem("tycoon_save_v23"); if (!s) { alert("沒有 v23 存檔。"); return; } var obj = JSON.parse(s); state.cur = obj.cur|0; state.dice = obj.dice||[0,0]; state.doublesInRow = obj.doublesInRow|0; state.awaitingBuy = false; state.mustEnd = false; state.players = (obj.players||[]).map(function(p){ return { id: p.id||uuid(), name: p.name, isAI: !!p.isAI, color: p.color, cash: p.cash|0, pos: p.pos|0, inJail: !!p.inJail, jailTurns: p.jailTurns|0, outCard: p.outCard|0, properties: p.properties||[], mortgaged: p.mortgaged||[], alive: p.alive!==false, rentBonusTemp: p.rentBonusTemp|0 }; }); state.bonusNextGo = obj.bonusNextGo||[]; state.houses = obj.houses||{}; renderPlayers(); buildBoard(); renderTokens(); document.getElementById('btnRoll').disabled = state.players[state.cur].isAI; document.getElementById('btnEnd').disabled = true; log("📂 已讀取 v23 存檔。", false); }catch(e){ diagERR("讀檔失敗："+(e&&e.message||e)); } });
+
+    // 起始
+    // initPlayers(); // 改為點擊新遊戲才開始
+    setTimeout(addButtonSounds, 500);
+    buildBoard();
+    renderTokens();
+    document.getElementById('btnEnd').disabled = true;
+  } // main 函數結束
+})();
   </script>
+  <script>
+  // 面板收起/展開功能已移除
+  
+  // 房屋等級顯示功能
+  (function(){
+    // 等待 DOM 完全載入
+    if (typeof window.updateLevelBadges === 'undefined') {
+      window.updateLevelBadges = function(){
+        // 移除所有現有的等級標記
+        var badges = document.querySelectorAll('.level-badge');
+        badges.forEach(function(el){ el.remove(); });
+        
+        // 遍歷所有有房屋的地產
+        if (typeof state === 'undefined' || !state.houses) return;
+        
+        Object.keys(state.houses).forEach(function(k){
+          var idx = Number(k);
+          var level = state.houses[k] | 0;
+          if (!level) return;
+          
+          // 找到對應的格子
+          var pos = idxToCoord(idx);
+          var cell = document.querySelector('#board > .tile[style*="grid-row: '+(pos.r+1)+';"[style*="grid-column: '+(pos.c+1)+';"');
+          if (!cell) return;
+          
+          // 創建等級標記
+          var badge = document.createElement('div');
+          badge.className = 'level-badge';
+          
+          if (level === 5) {
+            badge.textContent = 'LV5';
+            badge.classList.add('hotel');
+          } else {
+            badge.textContent = 'LV' + level;
+          }
+          
+          cell.appendChild(badge);
+        });
+      };
+      
+      // 覆蓋原始的 renderHouses 函數
+      if (typeof window.originalRenderHouses === 'undefined' && typeof renderHouses !== 'undefined') {
+        window.originalRenderHouses = renderHouses;
+        window.renderHouses = function() {
+          window.originalRenderHouses();
+          window.updateLevelBadges();
+        };
+      }
+    }
+  })();
+  </script>
+
 </body>
 </html>
-
